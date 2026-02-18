@@ -23,6 +23,7 @@ class DocumentData(BaseModel):
     parent_document_id: int | None
     is_current: bool
     created_by: int | None
+    source_url: str | None = None
     created_at: datetime
     updated_at: datetime
 

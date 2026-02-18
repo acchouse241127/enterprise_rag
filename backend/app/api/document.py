@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -37,6 +38,31 @@ async def upload_document(
     """Upload a document and trigger base parsing."""
     doc, err = await DocumentService.upload(
         db=db, knowledge_base_id=knowledge_base_id, upload_file=file, created_by=current_user.id
+    )
+    if err is not None:
+        return {"code": 1001, "message": "参数错误", "detail": err}
+    parse_and_index.delay(doc.id)
+    return {
+        "code": 0,
+        "message": "success",
+        "data": DocumentData.model_validate(doc).model_dump(mode="json"),
+    }
+
+
+class FromUrlRequest(BaseModel):
+    url: str
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/documents/from-url")
+def create_document_from_url(
+    knowledge_base_id: int,
+    body: FromUrlRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Create a document from URL; worker will fetch and index."""
+    doc, err = DocumentService.create_from_url(
+        db=db, knowledge_base_id=knowledge_base_id, url=body.url, created_by=current_user.id
     )
     if err is not None:
         return {"code": 1001, "message": "参数错误", "detail": err}

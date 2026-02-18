@@ -124,6 +124,16 @@ def _migrate_knowledge_bases_chunk_columns() -> None:
         conn.commit()
 
 
+def _migrate_documents_source_url() -> None:
+    """Add documents.source_url if missing (reshaping URL docs)."""
+    with engine.connect() as conn:
+        conn.execute(text("""
+            ALTER TABLE documents
+            ADD COLUMN IF NOT EXISTS source_url VARCHAR(2000) NULL
+        """))
+        conn.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
@@ -134,6 +144,7 @@ async def lifespan(app: FastAPI):
     for name, migrate in [
         ("users.role", _migrate_users_role_column),
         ("knowledge_bases.chunk_*", _migrate_knowledge_bases_chunk_columns),
+        ("documents.source_url", _migrate_documents_source_url),
     ]:
         try:
             migrate()

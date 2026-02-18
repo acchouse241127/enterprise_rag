@@ -53,6 +53,31 @@ class DocumentService:
         doc = DocumentService.get_by_id(db, document_id)
         if doc is None:
             return
+        if doc.file_type == "url":
+            from app.document_parser.url_parser import UrlParser
+            parsed_text = UrlParser().parse_url(doc.file_path)
+            doc.content_text = parsed_text
+            doc.status = "parsed"
+            doc.parser_message = "抓取成功"
+            chunks = DocumentService._chunker.chunk(parsed_text)
+            if chunks:
+                embeddings = DocumentService._embedding_service.embed(chunks)
+                ok, err = DocumentService._vector_store.upsert_document_chunks(
+                    knowledge_base_id=doc.knowledge_base_id,
+                    document_id=doc.id,
+                    chunks=chunks,
+                    embeddings=embeddings,
+                )
+                if ok:
+                    doc.status = "vectorized"
+                    doc.parser_message = f"抓取成功，分块 {len(chunks)}，向量化完成"
+                else:
+                    doc.parser_message = f"抓取成功，向量化跳过: {err}"
+            else:
+                doc.parser_message = "抓取成功，但未生成有效分块"
+            db.add(doc)
+            db.commit()
+            return
         path = Path(doc.file_path)
         if not path.exists():
             doc.status = "parse_failed"
@@ -110,6 +135,46 @@ class DocumentService:
         return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
+    def create_from_url(
+        db: Session, knowledge_base_id: int, url: str, created_by: int | None
+    ) -> tuple[Document | None, str | None]:
+        """Create a document record from URL; worker will fetch and index."""
+        from urllib.parse import urlparse
+        kb = DocumentService._validate_kb_exists(db, knowledge_base_id)
+        if kb is None:
+            return None, "知识库不存在"
+        url = (url or "").strip()
+        if not url.startswith(("http://", "https://")):
+            return None, "请输入有效的 http(s) URL"
+        try:
+            parsed = urlparse(url)
+            title = parsed.netloc or url[:50]
+        except Exception:
+            title = url[:50]
+        file_hash = hashlib.sha256(url.encode()).hexdigest()
+        filename = url[:500] if len(url) <= 500 else url[:497] + "..."
+        doc = Document(
+            knowledge_base_id=knowledge_base_id,
+            title=title,
+            filename=filename,
+            file_path=url,
+            file_type="url",
+            file_size=0,
+            file_hash=file_hash,
+            status="pending",
+            parser_message="已入队，等待抓取",
+            version=1,
+            parent_document_id=None,
+            is_current=True,
+            created_by=created_by,
+            source_url=url,
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+        return doc, None
+
+    @staticmethod
     async def upload(
         db: Session, knowledge_base_id: int, upload_file: UploadFile, created_by: int | None
     ) -> tuple[Document | None, str | None]:
@@ -121,7 +186,11 @@ class DocumentService:
             return None, "文件名不能为空"
 
         suffix = Path(upload_file.filename).suffix.lower()
-        allowed_suffixes = {".txt", ".md", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"}
+        allowed_suffixes = {
+            ".txt", ".md", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+            ".png", ".jpg", ".jpeg",
+            ".mp3", ".wav", ".m4a", ".flac", ".mp4", ".webm", ".mov",
+        }
         if suffix not in allowed_suffixes:
             return None, f"不支持的文件类型: {suffix}"
 

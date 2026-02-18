@@ -29,3 +29,9 @@ reportlab
 redis
 celery[redis]
 
+# Audio/Video/URL parsing (reshaping batch 3)
+faster-whisper
+pydub
+requests
+readability-lxml
+

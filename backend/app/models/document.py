@@ -35,6 +35,7 @@ class Document(Base):
     parent_document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
     is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)  # 网址类文档的原始 URL
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.now()
     )
