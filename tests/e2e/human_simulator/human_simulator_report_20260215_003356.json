@@ -1,0 +1,395 @@
+{
+  "run_at": "2026-02-15T00:33:56.420033",
+  "duration_seconds": 57.79,
+  "base_url": "http://localhost:8501",
+  "errors": [
+    {
+      "page": "冷启动",
+      "action": "点击登录",
+      "code": "ELEM",
+      "message": "未找到登录链接",
+      "timestamp": "2026-02-15T00:34:09.157871"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:09.876038"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:09.876913"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:14.906263"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:14.907678"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:17.951801"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:17.955056"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:21.233928"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:21.234660"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:23.994943"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:23.995332"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:26.954288"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:26.958727"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:31.666343"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:31.667690"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:35.663506"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:35.663716"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:38.004111"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:38.004869"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:41.043146"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:41.044016"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:43.557573"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:43.559467"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:46.757744"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:46.758110"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:49.622556"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:34:49.622835"
+    }
+  ],
+  "feedback": [
+    {
+      "page": "首页",
+      "action": "打开首页",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "首页加载正常，侧边栏可见",
+      "timestamp": "2026-02-15T00:34:02.424695"
+    },
+    {
+      "page": "冷启动",
+      "action": "未登录访问受保护页",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "正确提示请先登录",
+      "timestamp": "2026-02-15T00:34:06.539928"
+    },
+    {
+      "page": "登录",
+      "action": "正确登录",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "登录完成，需确认成功提示",
+      "timestamp": "2026-02-15T00:34:14.219408"
+    },
+    {
+      "page": "知识库管理",
+      "action": "创建知识库",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "知识库创建流程清晰",
+      "timestamp": "2026-02-15T00:34:16.969866"
+    },
+    {
+      "page": "知识库管理",
+      "action": "查看知识库列表",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "列表展示正常",
+      "timestamp": "2026-02-15T00:34:20.159842"
+    },
+    {
+      "page": "文档上传",
+      "action": "上传文档",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "文件选择与上传操作流畅",
+      "timestamp": "2026-02-15T00:34:23.151747"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "单轮问答",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "问答界面清晰，引用溯源可读",
+      "timestamp": "2026-02-15T00:34:26.107261"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "流式输出",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "流式输出体验良好",
+      "timestamp": "2026-02-15T00:34:29.089296"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "多轮对话",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "能结合上文追问",
+      "timestamp": "2026-02-15T00:34:29.767578"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "无答案场景",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "需确认是否避免捏造",
+      "timestamp": "2026-02-15T00:34:30.726905"
+    },
+    {
+      "page": "文档上传",
+      "action": "文档重新解析",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到重新解析按钮或文档列表为空",
+      "timestamp": "2026-02-15T00:34:34.062785"
+    },
+    {
+      "page": "文档上传",
+      "action": "文档下载",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到下载入口",
+      "timestamp": "2026-02-15T00:34:34.672278"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "新建会话",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到新建会话按钮",
+      "timestamp": "2026-02-15T00:34:37.331953"
+    },
+    {
+      "page": "知识库编辑",
+      "action": "进入编辑页",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "页面加载正常",
+      "timestamp": "2026-02-15T00:34:40.341640"
+    },
+    {
+      "page": "文件夹同步",
+      "action": "查看配置",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "文件夹同步页可访问",
+      "timestamp": "2026-02-15T00:34:42.862541"
+    },
+    {
+      "page": "对话管理",
+      "action": "对话列表",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "对话管理页可访问",
+      "timestamp": "2026-02-15T00:34:45.841224"
+    },
+    {
+      "page": "检索看板",
+      "action": "查看统计",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "检索看板可访问",
+      "timestamp": "2026-02-15T00:34:48.803831"
+    },
+    {
+      "page": "异步任务",
+      "action": "任务列表",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "异步任务页可访问",
+      "timestamp": "2026-02-15T00:34:51.584464"
+    },
+    {
+      "page": "登录",
+      "action": "登出",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "登出成功",
+      "timestamp": "2026-02-15T00:34:52.454241"
+    }
+  ],
+  "suggestions": [
+    {
+      "category": "系统体验",
+      "priority": "P0",
+      "content": "前端控制台存在 JS 错误，建议排查",
+      "context": "检测到 JS_ERROR"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P1",
+      "content": "建议增加 DOC/PPT 旧格式测试素材",
+      "context": "fixtures 缺少 .doc/.ppt"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P2",
+      "content": "建议准备接近 200MB 边界文件",
+      "context": "通用建议"
+    },
+    {
+      "category": "角色设定",
+      "priority": "P2",
+      "content": "阶段 F 建议补充异步任务取消后状态校验",
+      "context": "说明书建议"
+    }
+  ]
+}

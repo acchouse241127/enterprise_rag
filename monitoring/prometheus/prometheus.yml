@@ -1,0 +1,30 @@
+# Enterprise RAG System - Prometheus Configuration
+# Phase 3.3: Prometheus 配置
+# Author: C2
+# Date: 2026-02-14
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  # Enterprise RAG Backend
+  - job_name: 'enterprise-rag-backend'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

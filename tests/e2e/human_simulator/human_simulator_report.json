@@ -1,0 +1,345 @@
+{
+  "run_at": "2026-02-15T19:55:18.080688",
+  "duration_seconds": 173.38,
+  "base_url": "http://localhost:8501",
+  "errors": [
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T19:55:43.414395",
+      "screenshot_path": null
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T19:55:43.414695",
+      "screenshot_path": null
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T19:55:48.137902",
+      "screenshot_path": null
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T19:55:48.142803",
+      "screenshot_path": null
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T19:55:51.706481",
+      "screenshot_path": null
+    }
+  ],
+  "feedback": [
+    {
+      "page": "首页",
+      "action": "打开首页",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "首页加载正常，侧边栏可见",
+      "timestamp": "2026-02-15T19:55:33.820532"
+    },
+    {
+      "page": "冷启动",
+      "action": "未登录访问受保护页",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "正确提示请先登录",
+      "timestamp": "2026-02-15T19:55:38.923758"
+    },
+    {
+      "page": "冷启动",
+      "action": "点击登录链接",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "正确跳转登录页",
+      "timestamp": "2026-02-15T19:55:42.707008"
+    },
+    {
+      "page": "登录",
+      "action": "错误密码登录",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "正确提示登录失败",
+      "timestamp": "2026-02-15T19:55:47.297580"
+    },
+    {
+      "page": "登录",
+      "action": "空用户名登录",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "正确提示请输入用户名",
+      "timestamp": "2026-02-15T19:55:50.914215"
+    },
+    {
+      "page": "登录",
+      "action": "正确登录",
+      "fluency": 5,
+      "usability": 5,
+      "improvement_needed": 1,
+      "comment": "登录响应迅速",
+      "timestamp": "2026-02-15T19:55:55.568129"
+    },
+    {
+      "page": "知识库管理",
+      "action": "创建知识库",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "知识库创建流程清晰",
+      "timestamp": "2026-02-15T19:55:58.208828"
+    },
+    {
+      "page": "知识库管理",
+      "action": "查看知识库列表",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "列表展示正常",
+      "timestamp": "2026-02-15T19:56:01.364278"
+    },
+    {
+      "page": "文档上传",
+      "action": "上传文档",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "多格式上传(3个文件)流畅",
+      "timestamp": "2026-02-15T19:56:04.518925"
+    },
+    {
+      "page": "文档上传",
+      "action": "等待解析完成",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "解析等待时间可接受",
+      "timestamp": "2026-02-15T19:56:09.810173"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "单轮问答",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "问答界面清晰，引用溯源可读",
+      "timestamp": "2026-02-15T19:56:13.478104"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "流式输出",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "流式输出体验良好",
+      "timestamp": "2026-02-15T19:56:16.205749"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "多轮对话",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "能结合上文追问",
+      "timestamp": "2026-02-15T19:56:16.861501"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "无答案场景",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未明确无答案提示，需确认是否避免捏造",
+      "timestamp": "2026-02-15T19:56:25.253238"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "引用溯源",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "引用来源展示清晰，可定位原文",
+      "timestamp": "2026-02-15T19:56:26.324819"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "有用/无用反馈",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到反馈按钮(需回答渲染后展示)",
+      "timestamp": "2026-02-15T19:56:33.483652"
+    },
+    {
+      "page": "文档上传",
+      "action": "文档重新解析",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到重新解析按钮或文档列表为空",
+      "timestamp": "2026-02-15T19:57:00.295956"
+    },
+    {
+      "page": "文档上传",
+      "action": "文档下载",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到下载按钮",
+      "timestamp": "2026-02-15T19:57:23.048084"
+    },
+    {
+      "page": "文档上传",
+      "action": "文档删除",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未找到删除按钮(跳过删除以保留文档)",
+      "timestamp": "2026-02-15T19:57:45.238374"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "新建会话",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "新建对话清空历史",
+      "timestamp": "2026-02-15T19:57:48.558534"
+    },
+    {
+      "page": "知识库管理",
+      "action": "知识库内删除文档",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "未展开文档列表或无可删文档",
+      "timestamp": "2026-02-15T19:57:53.371387"
+    },
+    {
+      "page": "知识库编辑",
+      "action": "进入编辑页",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "知识库编辑页可访问",
+      "timestamp": "2026-02-15T19:57:55.881608"
+    },
+    {
+      "page": "知识库编辑",
+      "action": "分块参数",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "分块参数区域可见",
+      "timestamp": "2026-02-15T19:57:56.515925"
+    },
+    {
+      "page": "文件夹同步",
+      "action": "查看配置",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "文件夹同步页可访问",
+      "timestamp": "2026-02-15T19:57:59.581326"
+    },
+    {
+      "page": "对话管理",
+      "action": "对话列表",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "对话管理页可访问",
+      "timestamp": "2026-02-15T19:58:01.891180"
+    },
+    {
+      "page": "对话管理",
+      "action": "导出 MD/PDF",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "无对话时导出入口可能不展示",
+      "timestamp": "2026-02-15T19:58:01.903975"
+    },
+    {
+      "page": "对话管理",
+      "action": "分享链接",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "无对话时分享入口可能不展示",
+      "timestamp": "2026-02-15T19:58:02.818131"
+    },
+    {
+      "page": "检索看板",
+      "action": "查看统计",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "检索看板可访问",
+      "timestamp": "2026-02-15T19:58:05.658290"
+    },
+    {
+      "page": "异步任务",
+      "action": "任务列表",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "异步任务页可访问",
+      "timestamp": "2026-02-15T19:58:08.888555"
+    },
+    {
+      "page": "登录",
+      "action": "登出",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "登出成功",
+      "timestamp": "2026-02-15T19:58:09.826130"
+    }
+  ],
+  "suggestions": [
+    {
+      "category": "系统体验",
+      "priority": "P0",
+      "content": "前端控制台存在 JS 错误，建议排查",
+      "context": "检测到 JS_ERROR"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P1",
+      "content": "建议增加 DOC/PPT 旧格式测试素材",
+      "context": "fixtures 缺少 .doc/.ppt"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P2",
+      "content": "建议准备接近 200MB 边界文件",
+      "context": "通用建议"
+    },
+    {
+      "category": "角色设定",
+      "priority": "P2",
+      "content": "阶段 F 建议补充异步任务取消后状态校验",
+      "context": "说明书建议"
+    }
+  ]
+}

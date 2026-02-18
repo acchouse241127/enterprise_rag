@@ -1,0 +1,5 @@
+Enterprise RAG Test Document - English
+This is a plain text file for Phase 1.2 testing.
+Contains multiple lines to verify TXT parsing and chunking.
+The system should support parsing and vectorization of various formats.
+Test data: New York, London, Tokyo, Sydney.

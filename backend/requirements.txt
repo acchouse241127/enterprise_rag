@@ -1,0 +1,27 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+sqlalchemy
+psycopg2-binary
+python-jose[cryptography]
+bcrypt<4.1
+passlib[bcrypt]
+pyotp
+python-multipart
+PyMuPDF
+opencv-python-headless
+numpy
+paddleocr
+easyocr
+python-docx
+openpyxl
+python-pptx
+chromadb
+sentence-transformers
+httpx
+slowapi
+pytest
+# Phase 3.3
+prometheus_client
+reportlab
+

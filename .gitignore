@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual env
+venv/
+.venv/
+
+# Env files
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# Runtime data
+data/
+!data/.gitkeep
+
+# Logs
+*.log
+
+# Git worktrees (reshaping branch)
+.worktrees/
+

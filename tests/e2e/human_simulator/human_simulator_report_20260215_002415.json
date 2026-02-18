@@ -1,0 +1,133 @@
+{
+  "run_at": "2026-02-15T00:24:15.931238",
+  "duration_seconds": 24.39,
+  "base_url": "http://localhost:8501",
+  "errors": [
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:23.616466"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:23.616965"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:28.221191"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:28.221804"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:32.221754"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:32.222014"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:36.616212"
+    },
+    {
+      "page": "Console",
+      "action": "JS",
+      "code": "JS_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "timestamp": "2026-02-15T00:24:36.619007"
+    }
+  ],
+  "feedback": [
+    {
+      "page": "登录",
+      "action": "登录",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "登录完成，需确认是否有成功提示展示",
+      "timestamp": "2026-02-15T00:24:28.048413"
+    },
+    {
+      "page": "知识库管理",
+      "action": "创建知识库",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "知识库创建流程清晰，表单填写顺畅",
+      "timestamp": "2026-02-15T00:24:30.272554"
+    },
+    {
+      "page": "文档上传",
+      "action": "上传文档",
+      "fluency": 4,
+      "usability": 4,
+      "improvement_needed": 2,
+      "comment": "文件选择与上传操作流畅，等待解析时间可接受",
+      "timestamp": "2026-02-15T00:24:34.678549"
+    },
+    {
+      "page": "RAG 问答",
+      "action": "RAG 问答",
+      "fluency": 4,
+      "usability": 5,
+      "improvement_needed": 2,
+      "comment": "问答界面清晰，流式输出体验良好，引用溯源可读",
+      "timestamp": "2026-02-15T00:24:39.355386"
+    }
+  ],
+  "suggestions": [
+    {
+      "category": "系统体验",
+      "priority": "P0",
+      "content": "前端控制台存在 JS 错误，建议排查并修复以避免白屏或功能异常",
+      "context": "检测到 JS_ERROR"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P1",
+      "content": "建议增加 DOC/PPT 旧格式测试素材，验证 LibreOffice 转换流程",
+      "context": "fixtures 中缺少 .doc/.ppt"
+    },
+    {
+      "category": "测试素材",
+      "priority": "P2",
+      "content": "建议准备接近 200MB 的边界文件，验证单文件限制提示与用户体验",
+      "context": "通用建议"
+    },
+    {
+      "category": "工作内容",
+      "priority": "P2",
+      "content": "当前自动化未覆盖知识库编辑、文件夹同步、对话导出、检索看板、异步任务，建议扩展场景矩阵",
+      "context": "阶段 F 高级功能未覆盖"
+    },
+    {
+      "category": "角色设定",
+      "priority": "P2",
+      "content": "阶段 F 建议补充异步任务取消后的状态校验步骤",
+      "context": "说明书 9.1 补充建议"
+    }
+  ]
+}

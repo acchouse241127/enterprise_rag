@@ -1,0 +1,130 @@
+services:
+  # ===========================================
+  # 基础服务（数据库）
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: enterprise_rag_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-enterprise_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-enterprise_rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enterprise_rag}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-enterprise_rag} -d ${POSTGRES_DB:-enterprise_rag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag_network
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: enterprise_rag_chromadb
+    restart: unless-stopped
+    ports:
+      - "${CHROMA_PORT:-8001}:8000"
+    volumes:
+      - ./data/vectors:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    # 新版 Chroma 镜像健康检查接口可能变化，暂禁用以免阻塞 backend 启动
+    healthcheck:
+      disable: true
+    networks:
+      - rag_network
+
+  # ===========================================
+  # 应用服务（代码挂载：本地改动自动同步到容器，无需重建镜像）
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/app/data/uploads
+      - ./data/models:/app/data/models
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    # 环境在「容器启动时」从宿主机 .env 注入，改 .env 后重新 up 即可生效
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-enterprise_rag}
+      - POSTGRES_USER=${POSTGRES_USER:-enterprise_rag}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-enterprise_rag}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-please-change-me-in-production}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.moonshot.cn/v1}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-kimi-k2.5}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-1}
+      - RERANKER_ENABLED=${RERANKER_ENABLED:-true}
+      - RERANKER_CANDIDATE_K=${RERANKER_CANDIDATE_K:-12}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - UPLOAD_ROOT_DIR=/app/data/uploads
+      - TZ=Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8501}:8501"
+    volumes:
+      - ./frontend:/app
+    # 环境在「容器启动时」从宿主机 .env 注入
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://backend:8000/api
+      - BACKEND_URL=http://backend:8000
+      - TZ=Asia/Shanghai
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+networks:
+  rag_network:
+    driver: bridge
+

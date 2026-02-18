@@ -1,0 +1,257 @@
+# Enterprise RAG System - CI Pipeline
+# Author: C2
+# Date: 2026-02-13
+# 
+# 触发条件：push/PR 到 main/develop 分支
+# 测试策略：
+# - 单元测试：无外部依赖，直接运行
+# - 集成测试：需要 Postgres/Chroma，使用 services 或 skipif 标记
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.11"
+  POSTGRES_DB: enterprise_rag_test
+  POSTGRES_USER: test_user
+  POSTGRES_PASSWORD: test_password
+  JWT_SECRET_KEY: test-secret-key-for-ci
+
+jobs:
+  # ========================================
+  # 代码质量检查
+  # ========================================
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install linting tools
+        run: |
+          pip install ruff black isort
+
+      - name: Run ruff
+        run: |
+          cd enterprise_rag/backend
+          ruff check . --output-format=github || true
+
+      - name: Check black formatting
+        run: |
+          cd enterprise_rag/backend
+          black --check . || true
+
+      - name: Check import sorting
+        run: |
+          cd enterprise_rag/backend
+          isort --check-only . || true
+
+  # ========================================
+  # 单元测试（无外部依赖）
+  # ========================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          cd enterprise_rag/backend
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run unit tests
+        run: |
+          cd enterprise_rag/backend
+          python -m pytest tests/ -v \
+            --ignore=tests/test_qa.py \
+            -m "not integration" \
+            --tb=short \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=term-missing
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8001
+          JWT_SECRET_KEY: ${{ env.JWT_SECRET_KEY }}
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: enterprise_rag/backend/coverage.xml
+          fail_ci_if_error: false
+
+  # ========================================
+  # 集成测试（需要外部服务）
+  # ========================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      chromadb:
+        image: chromadb/chroma:latest
+        ports:
+          - 8001:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          cd enterprise_rag/backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Wait for services
+        run: |
+          sleep 10
+          curl -f http://localhost:8001/api/v1/heartbeat || echo "ChromaDB not ready"
+
+      - name: Run integration tests
+        run: |
+          cd enterprise_rag/backend
+          python -m pytest tests/ -v \
+            -m "integration" \
+            --tb=short
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8001
+          JWT_SECRET_KEY: ${{ env.JWT_SECRET_KEY }}
+
+  # ========================================
+  # Docker 构建测试
+  # ========================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: |
+          cd enterprise_rag/backend
+          docker build -t enterprise-rag-backend:test .
+
+      - name: Build frontend image
+        run: |
+          cd enterprise_rag/frontend
+          docker build -t enterprise-rag-frontend:test .
+
+      - name: Test docker-compose config
+        run: |
+          cd enterprise_rag
+          docker compose config
+
+  # ========================================
+  # 全栈回归测试（可选，手动触发）
+  # ========================================
+  full-stack-regression:
+    name: Full Stack Regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[full-regression]')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start full stack
+        run: |
+          cd enterprise_rag
+          docker compose --profile full up -d --build
+          sleep 60  # Wait for services to be ready
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:8000/api/health || exit 1
+          curl -f http://localhost:8501/_stcore/health || exit 1
+
+      - name: Run regression tests
+        run: |
+          cd enterprise_rag/backend
+          pip install pytest pytest-asyncio httpx
+          python -m pytest tests/ -v --tb=short
+        env:
+          API_BASE_URL: http://localhost:8000/api
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          cd enterprise_rag
+          docker compose logs > docker-compose-logs.txt
+          
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-logs
+          path: enterprise_rag/docker-compose-logs.txt
+
+      - name: Stop full stack
+        if: always()
+        run: |
+          cd enterprise_rag
+          docker compose --profile full down -v

@@ -1,0 +1,127 @@
+# Enterprise RAG System - Prometheus Alert Rules
+# Phase 3.3: 告警规则配置
+# Author: C2
+# Date: 2026-02-14
+
+groups:
+  - name: enterprise_rag_alerts
+    rules:
+      # ============== 系统健康告警 ==============
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m])) 
+          / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 错误率过高"
+          description: "5xx 错误率超过 5%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 请求延迟过高"
+          description: "P95 延迟超过 5 秒，当前值: {{ $value | humanizeDuration }}"
+
+      # ============== RAG 查询告警 ==============
+      - alert: RAGQuerySlowRetrieval
+        expr: |
+          histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket{stage="retrieval"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG 检索阶段延迟过高"
+          description: "检索阶段 P95 延迟超过 2 秒，当前值: {{ $value | humanizeDuration }}"
+
+      - alert: RAGQuerySlowLLM
+        expr: |
+          histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket{stage="llm"}[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG LLM 阶段延迟过高"
+          description: "LLM 阶段 P95 延迟超过 30 秒，当前值: {{ $value | humanizeDuration }}"
+
+      - alert: LowRetrievalQuality
+        expr: |
+          histogram_quantile(0.50, rate(rag_top_chunk_score_bucket[1h])) < 0.5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "检索质量下降"
+          description: "Top chunk 相似度中位数低于 0.5，当前值: {{ $value }}"
+
+      # ============== 用户反馈告警 ==============
+      - alert: HighNegativeFeedbackRate
+        expr: |
+          sum(rate(user_feedback_total{feedback_type="not_helpful"}[1h])) 
+          / sum(rate(user_feedback_total[1h])) > 0.3
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "负面反馈率过高"
+          description: "「无用」反馈占比超过 30%，当前值: {{ $value | humanizePercentage }}"
+
+      # ============== 异步任务告警 ==============
+      - alert: HighPendingTasks
+        expr: |
+          sum(async_tasks_pending) > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "待处理任务积压"
+          description: "待处理任务数超过 100，当前值: {{ $value }}"
+
+      - alert: TaskFailureRate
+        expr: |
+          sum(rate(async_tasks_completed{status="failed"}[1h])) 
+          / sum(rate(async_tasks_completed[1h])) > 0.1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "异步任务失败率过高"
+          description: "任务失败率超过 10%，当前值: {{ $value | humanizePercentage }}"
+
+      # ============== 文档处理告警 ==============
+      - alert: DocumentParseFailureRate
+        expr: |
+          sum(rate(documents_parsed_total{status="failed"}[1h])) 
+          / sum(rate(documents_parsed_total[1h])) > 0.2
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "文档解析失败率过高"
+          description: "文档解析失败率超过 20%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: SlowDocumentParsing
+        expr: |
+          histogram_quantile(0.95, rate(document_parse_duration_seconds_bucket[5m])) > 120
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "文档解析速度过慢"
+          description: "文档解析 P95 延迟超过 2 分钟，当前值: {{ $value | humanizeDuration }}"
+
+      # ============== 资源告警 ==============
+      - alert: NoActiveKnowledgeBases
+        expr: |
+          knowledge_bases_total == 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "无知识库"
+          description: "系统中没有任何知识库，请检查是否正常"
