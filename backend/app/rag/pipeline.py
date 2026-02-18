@@ -95,13 +95,15 @@ class RagPipeline:
         for idx in sorted(used_ids):
             chunk = chunks[idx]
             md = chunk.get("metadata") or {}
+            content = str(chunk.get("content", ""))
             citations.append(
                 {
                     "id": idx,
                     "chunk_id": chunk.get("chunk_id"),
                     "document_id": md.get("document_id"),
                     "chunk_index": md.get("chunk_index"),
-                    "content_preview": str(chunk.get("content", ""))[:200],
+                    "content_preview": content[:200],
+                    "reason": content[:150].strip() or "与问题相关",
                 }
             )
         return " ".join(cited_sentences).strip(), citations

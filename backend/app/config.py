@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     embedding_model_name: str = "BAAI/bge-m3"
     embedding_fallback_dim: int = 64
     retrieval_top_k: int = 5
+    retrieval_use_keyword: bool = False  # 是否启用关键词一路召回（与向量合并）
+    retrieval_query_expansion_enabled: bool = False  # 是否启用多 query 检索（当前为 stub）
+    retrieval_strategy: str = "default"  # default | high_recall | high_precision | low_latency（预留）
     reranker_enabled: bool = True
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
     reranker_candidate_k: int = 12  # 候选数越小越快，20 易导致首字等待 3~8 秒

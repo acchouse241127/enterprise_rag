@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 from app.llm import ChatMessage, LlmProviderError, build_chat_provider
 from app.services.conversation_service import ConversationService
 from app.rag import BgeM3EmbeddingService, BgeRerankerService, ChromaVectorStore, RagPipeline, VectorRetriever, deduplicate_chunks
+from app.rag.query_expansion import expand_query
+from app.rag.keyword_retriever import KeywordRetriever
 
 
 class QaService:
@@ -33,6 +35,7 @@ class QaService:
         collection_prefix=settings.chroma_collection_prefix,
     )
     _retriever = VectorRetriever(_embedding_service, _vector_store)
+    _keyword_retriever = KeywordRetriever(_embedding_service, _vector_store)
     _reranker = BgeRerankerService(model_name=settings.reranker_model_name)
     _pipeline = RagPipeline(_retriever, _embedding_service)
     _conversation_history: dict[str, list[ChatMessage]] = {}
@@ -208,15 +211,36 @@ class QaService:
         retrieve_top_k = max(final_top_k, settings.reranker_candidate_k) if settings.reranker_enabled else final_top_k
 
         retrieval_start = time.perf_counter()
-        chunks, err = QaService._retriever.retrieve(
-            knowledge_base_id=knowledge_base_id,
-            query=question,
-            top_k=retrieve_top_k,
-        )
+        queries = [question]
+        if getattr(settings, "retrieval_query_expansion_enabled", False):
+            queries = expand_query(question, max_extra=2) or [question]
+        seen_ids = set()
+        chunks = []
+        for q in queries:
+            vec_chunks, err = QaService._retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=q,
+                top_k=retrieve_top_k,
+            )
+            if err is not None:
+                return None, err
+            for c in vec_chunks:
+                cid = c.get("chunk_id")
+                if cid and cid not in seen_ids:
+                    seen_ids.add(cid)
+                    chunks.append(c)
+        if getattr(settings, "retrieval_use_keyword", False):
+            kw_chunks, _ = QaService._keyword_retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=question,
+                top_k=retrieve_top_k,
+            )
+            for c in kw_chunks:
+                cid = c.get("chunk_id")
+                if cid and cid not in seen_ids:
+                    seen_ids.add(cid)
+                    chunks.append(c)
         retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
-
-        if err is not None:
-            return None, err
 
         chunks_retrieved = len(chunks)
 
@@ -363,16 +387,37 @@ class QaService:
         retrieve_top_k = max(final_top_k, settings.reranker_candidate_k) if settings.reranker_enabled else final_top_k
 
         retrieval_start = time.perf_counter()
-        chunks, err = QaService._retriever.retrieve(
-            knowledge_base_id=knowledge_base_id,
-            query=question,
-            top_k=retrieve_top_k,
-        )
+        queries = [question]
+        if getattr(settings, "retrieval_query_expansion_enabled", False):
+            queries = expand_query(question, max_extra=2) or [question]
+        seen_ids = set()
+        chunks = []
+        for q in queries:
+            vec_chunks, err = QaService._retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=q,
+                top_k=retrieve_top_k,
+            )
+            if err is not None:
+                yield f"data: {json.dumps({'type': 'error', 'message': err}, ensure_ascii=False)}\n\n"
+                return
+            for c in vec_chunks:
+                cid = c.get("chunk_id")
+                if cid and cid not in seen_ids:
+                    seen_ids.add(cid)
+                    chunks.append(c)
+        if getattr(settings, "retrieval_use_keyword", False):
+            kw_chunks, _ = QaService._keyword_retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=question,
+                top_k=retrieve_top_k,
+            )
+            for c in kw_chunks:
+                cid = c.get("chunk_id")
+                if cid and cid not in seen_ids:
+                    seen_ids.add(cid)
+                    chunks.append(c)
         retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
-
-        if err is not None:
-            yield f"data: {json.dumps({'type': 'error', 'message': err}, ensure_ascii=False)}\n\n"
-            return
 
         chunks_retrieved = len(chunks)
         chunks = QaService._filter_by_similarity(chunks)
