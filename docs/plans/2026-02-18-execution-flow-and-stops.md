@@ -100,3 +100,14 @@
 ---
 
 *文档生成后，将按你的确认开始完整 Task 执行。*
+
+---
+
+## 六、执行进度（已按方式一 + 模式 B 启动）
+
+- **分支 / 工作区**：`reshaping-v1`，worktree 路径：`e:\Super Fund\enterprise_rag\.worktrees\enterprise_rag-reshaping-v1`
+- **已完成**：
+  - **批次 1**（Task 1–3）：CORS、GET /auth/me、生产环境异常不泄密；已提交。
+  - **批次 2**（Task 4–6）：Redis + Celery 配置、上传改为入队 + Worker 解析、Docker redis + worker 服务；已提交。
+- **待执行**：批次 3（Task 7–9 解析 音/视/URL）→ 批次 4～7 → finishing 4 选 1。
+- **验证说明**：本地 pytest 需在安装 `backend/requirements.txt` 后、在 `backend` 目录下运行；当前环境若缺 `prometheus_client` 或 TestClient 版本差异会导致测试报错，可在 CI 或完整依赖环境中再跑。
