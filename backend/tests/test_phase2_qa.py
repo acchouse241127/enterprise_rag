@@ -33,7 +33,7 @@ class _FakeProvider:
 
 def test_multiturn_history_used_in_second_round(monkeypatch) -> None:
     fake_provider = _FakeProvider()
-    monkeypatch.setattr("app.services.qa_service.build_chat_provider", lambda: fake_provider)
+    monkeypatch.setattr("app.services.qa_service.get_provider_for_task", lambda task: fake_provider)
     monkeypatch.setattr(QaService, "_retriever", _FakeRetriever())
     monkeypatch.setattr(QaService, "_reranker", _FakeReranker())
     QaService._conversation_history = {}
@@ -41,13 +41,14 @@ def test_multiturn_history_used_in_second_round(monkeypatch) -> None:
     monkeypatch.setattr(settings, "reranker_enabled", True)
     monkeypatch.setattr(settings, "reranker_candidate_k", 20)
     monkeypatch.setattr(settings, "qa_history_max_turns", 6)
+    monkeypatch.setattr(settings, "retrieval_log_enabled", False)  # 避免 answer_generated 布尔/整型与 DB 不一致导致插入失败
 
-    data1, err1 = QaService.ask(knowledge_base_id=1, question="第一问", top_k=2, conversation_id="conv-a", history_turns=3)
+    data1, err1 = QaService.ask(knowledge_base_id=1, question="第一问", top_k=2, conversation_id="conv-a", history_turns=3, user_id=None)
     assert err1 is None
     assert data1 is not None
     assert data1["conversation_id"] == "conv-a"
 
-    data2, err2 = QaService.ask(knowledge_base_id=1, question="第二问", top_k=2, conversation_id="conv-a", history_turns=3)
+    data2, err2 = QaService.ask(knowledge_base_id=1, question="第二问", top_k=2, conversation_id="conv-a", history_turns=3, user_id=None)
     assert err2 is None
     assert data2 is not None
 

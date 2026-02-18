@@ -31,8 +31,9 @@ class _FakeResponse:
 
 def test_generate_success(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeClient:
-        def __init__(self, timeout: int) -> None:
+        def __init__(self, timeout: int = 60, limits: object = None, **kwargs: object) -> None:
             self.timeout = timeout
+            _ = limits, kwargs
 
         def post(self, url: str, headers: dict, json: dict) -> _FakeResponse:  # noqa: A002
             assert url.endswith("/chat/completions")
@@ -53,12 +54,13 @@ def test_generate_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_stream_success(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeClient:
-        def __init__(self, timeout: int) -> None:
+        def __init__(self, timeout: int = 60, limits: object = None, **kwargs: object) -> None:
             self.timeout = timeout
+            _ = limits, kwargs
 
-        def stream(self, method: str, url: str, headers: dict, json: dict) -> _FakeResponse:  # noqa: A002
+        def stream(self, method: str, url: str, headers: dict = None, json: dict = None) -> _FakeResponse:  # noqa: A002
             assert method == "POST"
-            assert json.get("stream") is True
+            assert (json or {}).get("stream") is True
             return _FakeResponse(
                 lines=[
                     'data: {"choices":[{"delta":{"content":"你"}}]}',
@@ -73,6 +75,7 @@ def test_stream_success(monkeypatch: pytest.MonkeyPatch) -> None:
         def __exit__(self, exc_type, exc, tb):
             return False
 
+    monkeypatch.setattr("app.llm.base._llm_client_cache", {})  # 避免复用上一用例的 client（无 stream）
     monkeypatch.setattr("app.llm.base.httpx.Client", _FakeClient)
     provider = DeepSeekProvider(api_key="test-key", retry_base_delay=0)
     chunks = list(provider.stream(messages=[ChatMessage(role="user", content="hi")]))
@@ -81,10 +84,11 @@ def test_stream_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_generate_retry_then_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FailClient:
-        def __init__(self, timeout: int) -> None:
+        def __init__(self, timeout: int = 60, limits: object = None, **kwargs: object) -> None:
             self.timeout = timeout
+            _ = limits, kwargs
 
-        def post(self, url: str, headers: dict, json: dict) -> _FakeResponse:  # noqa: A002
+        def post(self, url: str, headers: dict = None, json: dict = None) -> _FakeResponse:  # noqa: A002
             raise httpx.ConnectError("connection refused")
 
         def __enter__(self):
@@ -93,6 +97,7 @@ def test_generate_retry_then_fail(monkeypatch: pytest.MonkeyPatch) -> None:
         def __exit__(self, exc_type, exc, tb):
             return False
 
+    monkeypatch.setattr("app.llm.base._llm_client_cache", {})  # 确保使用本用例的 FailClient
     monkeypatch.setattr("app.llm.base.httpx.Client", _FailClient)
     provider = DeepSeekProvider(api_key="test-key", max_retries=1, retry_base_delay=0)
 

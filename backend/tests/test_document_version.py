@@ -143,10 +143,6 @@ class TestDocumentVersionService:
         mock_db.commit.assert_called()
 
 
-@pytest.mark.skipif(
-    True,  # Skip due to TestClient compatibility issue with Python 3.14
-    reason="TestClient 与 Python 3.14 / starlette 版本不兼容，需 CI 环境执行"
-)
 class TestDocumentVersionAPI:
     """Test document version API endpoints."""
 
@@ -171,6 +167,7 @@ class TestDocumentVersionAPI:
             mock_doc.created_by = 1
             mock_doc.created_at = "2026-02-13T10:00:00"
             mock_doc.updated_at = "2026-02-13T10:00:00"
+            mock_doc.source_url = None
             
             mock_list.return_value = ([mock_doc], None)
             
@@ -212,6 +209,7 @@ class TestDocumentVersionAPI:
             mock_doc.created_by = 1
             mock_doc.created_at = "2026-02-13T10:00:00"
             mock_doc.updated_at = "2026-02-13T10:00:00"
+            mock_doc.source_url = None
             
             mock_activate.return_value = (mock_doc, None)
             

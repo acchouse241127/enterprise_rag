@@ -42,8 +42,11 @@ def test_qa_ask_api(monkeypatch, client: TestClient, auth_headers: dict) -> None
         top_k: int | None = None,
         conversation_id: str | None = None,
         history_turns: int | None = None,
+        user_id: int | None = None,
+        system_prompt_version: str | None = None,
+        **kwargs: object,
     ):
-        _ = conversation_id, history_turns
+        _ = conversation_id, history_turns, user_id, system_prompt_version, kwargs
         return (
             {
                 "answer": "这是测试回答 [ID:0]。",
@@ -72,8 +75,11 @@ def test_qa_stream_api(monkeypatch, client: TestClient, auth_headers: dict) -> N
         top_k: int | None = None,
         conversation_id: str | None = None,
         history_turns: int | None = None,
+        user_id: int | None = None,
+        system_prompt_version: str | None = None,
+        **kwargs: object,
     ):
-        _ = conversation_id, history_turns
+        _ = conversation_id, history_turns, user_id, system_prompt_version, kwargs
         yield 'data: {"type":"answer","delta":"你好"}\n\n'
         yield "data: [DONE]\n\n"
 
@@ -97,8 +103,11 @@ def test_qa_ask_no_answer(monkeypatch, client: TestClient, auth_headers: dict) -
         top_k: int | None = None,
         conversation_id: str | None = None,
         history_turns: int | None = None,
+        user_id: int | None = None,
+        system_prompt_version: str | None = None,
+        **kwargs: object,
     ):
-        _ = conversation_id, history_turns
+        _ = conversation_id, history_turns, user_id, system_prompt_version, kwargs
         return (
             {
                 "answer": "未检索到足够知识，无法给出可靠答案。",

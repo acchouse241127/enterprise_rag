@@ -48,8 +48,8 @@ def test_readiness_probe(client: TestClient) -> None:
 
 
 def test_metrics(client: TestClient) -> None:
-    """TC-P23-MON-004: GET /metrics 返回应用指标与配置."""
-    resp = client.get("/metrics")
+    """TC-P23-MON-004: GET /metrics/json 返回应用指标与配置（/metrics 为 Prometheus 文本）."""
+    resp = client.get("/metrics/json")
     assert resp.status_code == 200
     data = resp.json()
     assert "app_info" in data
