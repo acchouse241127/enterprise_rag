@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     llm_max_retries: int = 3
     llm_retry_base_delay: float = 1.0
     llm_temperature: float = 0.2  # Kimi K2.5 仅支持 1.0，其他模型可用 0.2
+    # 策略 B 预留：按任务类型覆盖 model/base_url/api_key，空则全部用默认
+    llm_task_overrides: dict[str, dict] | None = None  # Strategy B: e.g. {"qa": {"model_name": "strong-model"}}
 
     jwt_secret_key: str = "please-change-me"
     jwt_algorithm: str = "HS256"

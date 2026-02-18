@@ -11,7 +11,7 @@ from typing import Any
 from app.config import settings
 
 logger = logging.getLogger(__name__)
-from app.llm import ChatMessage, LlmProviderError, build_chat_provider
+from app.llm import ChatMessage, LlmProviderError, get_provider_for_task
 from app.services.conversation_service import ConversationService
 from app.rag import BgeM3EmbeddingService, BgeRerankerService, ChromaVectorStore, RagPipeline, VectorRetriever, deduplicate_chunks
 from app.rag.query_expansion import expand_query
@@ -288,7 +288,7 @@ class QaService:
                 "retrieval_log_id": log_id,  # Phase 3.2
             }, None
 
-        provider = build_chat_provider()
+        provider = get_provider_for_task("qa")
         history_messages = QaService._get_history_messages(knowledge_base_id, conversation_id, history_turns)
         messages = QaService._pipeline.build_prompt_messages(
             question=question,
@@ -458,7 +458,7 @@ class QaService:
             yield "data: [DONE]\n\n"
             return
 
-        provider = build_chat_provider()
+        provider = get_provider_for_task("qa")
         history_messages = QaService._get_history_messages(knowledge_base_id, conversation_id, history_turns)
         messages = QaService._pipeline.build_prompt_messages(
             question=question,

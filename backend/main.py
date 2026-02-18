@@ -134,6 +134,20 @@ def _migrate_documents_source_url() -> None:
         conn.commit()
 
 
+def _migrate_tenant_columns() -> None:
+    """Add tenant_id to knowledge_bases and users for ToB plan three."""
+    with engine.connect() as conn:
+        conn.execute(text("""
+            ALTER TABLE knowledge_bases
+            ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NULL
+        """))
+        conn.execute(text("""
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NULL
+        """))
+        conn.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
@@ -145,6 +159,7 @@ async def lifespan(app: FastAPI):
         ("users.role", _migrate_users_role_column),
         ("knowledge_bases.chunk_*", _migrate_knowledge_bases_chunk_columns),
         ("documents.source_url", _migrate_documents_source_url),
+        ("tenant_id", _migrate_tenant_columns),
     ]:
         try:
             migrate()

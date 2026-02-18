@@ -215,6 +215,24 @@ def mark_feedback_as_sample(
 # ========== 统计分析 ==========
 
 
+@router.get("/retrieval/dashboard")
+def get_retrieval_dashboard(
+    knowledge_base_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Dashboard aggregate: same as /retrieval/stats for SPA 看板页."""
+    return get_retrieval_stats(
+        knowledge_base_id=knowledge_base_id,
+        start_date=start_date,
+        end_date=end_date,
+        db=db,
+        current_user=current_user,
+    )
+
+
 @router.get("/retrieval/stats")
 def get_retrieval_stats(
     knowledge_base_id: int | None = None,

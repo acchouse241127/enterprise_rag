@@ -35,6 +35,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default=RoleEnum.VIEWER.value)
+    tenant_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)  # ToB 多租户预留
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.now()
     )
