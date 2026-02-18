@@ -40,6 +40,24 @@ services:
     networks:
       - rag_network
 
+  redis:
+    image: redis:7-alpine
+    container_name: enterprise_rag_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag_network
+    profiles:
+      - full
+
   # ===========================================
   # 应用服务（代码挂载：本地改动自动同步到容器，无需重建镜像）
   # ===========================================
@@ -77,12 +95,16 @@ services:
       - RERANKER_CANDIDATE_K=${RERANKER_CANDIDATE_K:-12}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - UPLOAD_ROOT_DIR=/app/data/uploads
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
       - TZ=Asia/Shanghai
     depends_on:
       postgres:
         condition: service_healthy
       chromadb:
         condition: service_started
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/health"]
       interval: 30s
@@ -119,6 +141,43 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_worker
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/app/data/uploads
+      - ./data/models:/app/data/models
+    command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-enterprise_rag}
+      - POSTGRES_USER=${POSTGRES_USER:-enterprise_rag}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-enterprise_rag}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - UPLOAD_ROOT_DIR=/app/data/uploads
+      - TZ=Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - rag_network
     profiles:

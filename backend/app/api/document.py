@@ -10,6 +10,7 @@ from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas import DocumentData
 from app.services.document_service import DocumentService
+from app.tasks.document_tasks import parse_and_index
 
 router = APIRouter()
 
@@ -39,6 +40,7 @@ async def upload_document(
     )
     if err is not None:
         return {"code": 1001, "message": "参数错误", "detail": err}
+    parse_and_index.delay(doc.id)
     return {
         "code": 0,
         "message": "success",
@@ -64,6 +66,7 @@ async def batch_upload_documents(
             db=db, knowledge_base_id=knowledge_base_id, upload_file=item, created_by=current_user.id
         )
         if err is None and doc is not None:
+            parse_and_index.delay(doc.id)
             success_items.append(DocumentData.model_validate(doc).model_dump(mode="json"))
         else:
             failed_items.append({"filename": item.filename, "error": err or "上传失败"})

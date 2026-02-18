@@ -78,6 +78,10 @@ class Settings(BaseSettings):
     retrieval_log_enabled: bool = True
     retrieval_log_max_chunks: int = 20  # 日志中记录的最大 chunk 数
 
+    # Redis & Celery（队列与 Worker）
+    redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = ""  # 空则使用 redis_url
+
     model_config = SettingsConfigDict(
         env_file=str(_DOTENV_PATH) if _DOTENV_PATH.exists() else None,
         env_file_encoding="utf-8",

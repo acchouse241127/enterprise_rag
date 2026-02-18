@@ -25,3 +25,7 @@ pytest
 prometheus_client
 reportlab
 
+# Queue and worker (reshaping)
+redis
+celery[redis]
+

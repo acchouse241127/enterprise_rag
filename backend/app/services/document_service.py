@@ -45,6 +45,66 @@ class DocumentService:
         return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
+    def parse_and_index_sync(db: Session, document_id: int) -> None:
+        """
+        Parse document, chunk, embed, upsert to vector store; update doc status.
+        Used by Celery worker task. Caller must provide a dedicated session.
+        """
+        doc = DocumentService.get_by_id(db, document_id)
+        if doc is None:
+            return
+        path = Path(doc.file_path)
+        if not path.exists():
+            doc.status = "parse_failed"
+            doc.parser_message = "文件不存在"
+            db.add(doc)
+            db.commit()
+            return
+        suffix = Path(doc.filename).suffix.lower()
+        parser = get_parser_for_extension(suffix)
+        knowledge_base_id = doc.knowledge_base_id
+        doc.status = "parsing"
+        doc.parser_message = "解析中"
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+
+        if parser is None:
+            doc.status = "parser_not_implemented"
+            doc.parser_message = f"{suffix} 解析器尚未实现"
+            db.add(doc)
+            db.commit()
+            db.refresh(doc)
+            return
+        try:
+            parsed_text = parser.parse(path)
+            doc.content_text = parsed_text
+            doc.status = "parsed"
+            doc.parser_message = "解析成功"
+            chunks = DocumentService._chunker.chunk(parsed_text)
+            if chunks:
+                embeddings = DocumentService._embedding_service.embed(chunks)
+                ok, err = DocumentService._vector_store.upsert_document_chunks(
+                    knowledge_base_id=knowledge_base_id,
+                    document_id=doc.id,
+                    chunks=chunks,
+                    embeddings=embeddings,
+                )
+                if ok:
+                    doc.status = "vectorized"
+                    doc.parser_message = f"解析成功，分块 {len(chunks)}，向量化完成"
+                else:
+                    doc.status = "parsed"
+                    doc.parser_message = f"解析成功，分块 {len(chunks)}，向量化跳过: {err}"
+            else:
+                doc.parser_message = "解析成功，但未生成有效分块"
+        except Exception as exc:
+            doc.status = "parse_failed"
+            doc.parser_message = f"解析失败: {exc}"
+        db.add(doc)
+        db.commit()
+
+    @staticmethod
     def _validate_kb_exists(db: Session, knowledge_base_id: int) -> KnowledgeBase | None:
         stmt = select(KnowledgeBase).where(KnowledgeBase.id == knowledge_base_id)
         return db.execute(stmt).scalar_one_or_none()
@@ -110,48 +170,13 @@ class DocumentService:
             file_type=suffix.removeprefix("."),
             file_size=len(content),
             file_hash=file_hash,
-            status="uploaded",
-            parser_message=None,
+            status="pending",
+            parser_message="已入队，等待解析",
             version=version,
             parent_document_id=parent_document_id,
             is_current=True,
             created_by=created_by,
         )
-        db.add(doc)
-        db.commit()
-        db.refresh(doc)
-
-        parser = get_parser_for_extension(suffix)
-        if parser is None:
-            doc.status = "parser_not_implemented"
-            doc.parser_message = f"{suffix} 解析器尚未实现"
-        else:
-            try:
-                parsed_text = parser.parse(storage_path)
-                doc.content_text = parsed_text
-                doc.status = "parsed"
-                doc.parser_message = "解析成功"
-                chunks = DocumentService._chunker.chunk(parsed_text)
-                if chunks:
-                    embeddings = DocumentService._embedding_service.embed(chunks)
-                    ok, err = DocumentService._vector_store.upsert_document_chunks(
-                        knowledge_base_id=knowledge_base_id,
-                        document_id=doc.id,
-                        chunks=chunks,
-                        embeddings=embeddings,
-                    )
-                    if ok:
-                        doc.status = "vectorized"
-                        doc.parser_message = f"解析成功，分块 {len(chunks)}，向量化完成"
-                    else:
-                        doc.status = "parsed"
-                        doc.parser_message = f"解析成功，分块 {len(chunks)}，向量化跳过: {err}"
-                else:
-                    doc.parser_message = "解析成功，但未生成有效分块"
-            except Exception as exc:
-                doc.status = "parse_failed"
-                doc.parser_message = f"解析失败: {exc}"
-
         db.add(doc)
         db.commit()
         db.refresh(doc)
