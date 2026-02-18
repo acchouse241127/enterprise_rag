@@ -8,6 +8,8 @@ Date: 2026-02-13
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.config import settings
+
 
 class AppException(Exception):
     """Base application exception."""
@@ -73,8 +75,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         import logging
 
         logger = logging.getLogger("enterprise_rag")
-        logger.exception(f"Unexpected error: {exc}")
-        # 同时写入 operation.log 便于与前端日志一起查阅
+        logger.exception("Unexpected error: %s", exc)
         try:
             from app.core.logging import get_operation_logger
             op_log = get_operation_logger()
@@ -86,11 +87,15 @@ def register_exception_handlers(app: FastAPI) -> None:
         except Exception:  # noqa: S110
             pass
 
+        # 生产环境不向响应泄露异常详情，仅写日志
+        is_production = (getattr(settings, "env", "development") or "").lower() == "production"
+        detail = None if is_production else (str(exc) if str(exc) else None)
+
         return JSONResponse(
             status_code=500,
             content={
                 "code": 5000,
                 "message": "服务器内部错误",
-                "detail": str(exc) if str(exc) else None,
+                "detail": detail,
             },
         )

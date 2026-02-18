@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     api_prefix: str = "/api"
     log_level: str = "INFO"
+    env: str = "development"  # development | production；生产环境不向响应泄露异常详情
+    cors_origins: str = "http://localhost:3000"  # 逗号分隔，SPA 跨域白名单
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432

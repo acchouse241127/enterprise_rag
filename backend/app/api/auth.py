@@ -3,9 +3,10 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
 from app.core.limiter import limiter
 from app.core.security import create_access_token
+from app.models.user import User
 from app.schemas.auth import LoginRequest, TotpSetupRequest, TotpVerifyRequest
 from app.services.auth_service import AuthService
 
@@ -31,6 +32,21 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         "code": 0,
         "message": "success",
         "data": {"access_token": token, "token_type": "bearer"},
+    }
+
+
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)) -> dict:
+    """Return current user info for SPA token validation (id, username, non-sensitive only)."""
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "role": getattr(current_user, "role", "viewer"),
+            "is_admin": getattr(current_user, "is_admin", False),
+        },
     }
 
 

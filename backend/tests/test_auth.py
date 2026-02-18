@@ -54,6 +54,31 @@ class TestAuthLogin:
         assert data.get("data", {}).get("logged_out") is True
 
 
+class TestAuthMe:
+    """GET /api/auth/me for SPA token validation."""
+
+    def test_me_requires_auth(self, client: TestClient) -> None:
+        """Without Authorization header returns 401."""
+        resp = client.get("/api/auth/me")
+        assert resp.status_code == 401
+
+    def test_me_success(self, client: TestClient) -> None:
+        """With valid token returns current user id, username, role."""
+        login = client.post(
+            "/api/auth/login",
+            json={"username": "admin", "password": "password123"},
+        )
+        assert login.status_code == 200 and login.json().get("code") == 0
+        token = login.json()["data"]["access_token"]
+        resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["code"] == 0
+        assert "id" in data.get("data", {})
+        assert data["data"]["username"] == "admin"
+        assert "role" in data["data"]
+
+
 class TestTotp:
     """TOTP API tests."""
 
