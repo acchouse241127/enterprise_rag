@@ -2,8 +2,10 @@
 # Author: C2
 # Date: 2026-02-13
 #
+# 发布门禁：发布前执行本脚本通过后，再执行 docs/checklists/pre-release.md 与 manual-acceptance.md，填写 docs/templates/acceptance-report.md。
+#
 # 用法：
-#   .\scripts\run_regression.ps1          # 运行全栈回归测试
+#   .\scripts\run_regression.ps1          # 运行全栈回归测试（含 redis、worker）
 #   .\scripts\run_regression.ps1 -Clean   # 清理后运行
 #   .\scripts\run_regression.ps1 -Stop    # 仅停止服务
 
