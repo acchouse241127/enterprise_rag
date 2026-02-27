@@ -34,6 +34,7 @@ class RetrievalLogService:
         avg_chunk_score: float | None = None,
         min_chunk_score: float | None = None,
         chunk_details: list[dict] | None = None,
+        cited_chunk_ids: list[int] | None = None,  # B4.6: 被引用的 chunk IDs
         query_embedding_time_ms: int | None = None,
         retrieval_time_ms: int | None = None,
         rerank_time_ms: int | None = None,
@@ -48,6 +49,8 @@ class RetrievalLogService:
         if chunk_details and len(chunk_details) > settings.retrieval_log_max_chunks:
             chunk_details = chunk_details[:settings.retrieval_log_max_chunks]
 
+        # answer_generated 在 DB 中为 INTEGER(0/1)，需显式转换避免 PostgreSQL 类型不匹配
+        answer_gen_int = 1 if answer_generated else 0
         log = RetrievalLog(
             knowledge_base_id=knowledge_base_id,
             user_id=user_id,
@@ -60,12 +63,13 @@ class RetrievalLogService:
             avg_chunk_score=avg_chunk_score,
             min_chunk_score=min_chunk_score,
             chunk_details=chunk_details,
+            cited_chunk_ids=cited_chunk_ids,
             query_embedding_time_ms=query_embedding_time_ms,
             retrieval_time_ms=retrieval_time_ms,
             rerank_time_ms=rerank_time_ms,
             total_time_ms=total_time_ms,
             llm_time_ms=llm_time_ms,
-            answer_generated=answer_generated,
+            answer_generated=answer_gen_int,
             answer_length=answer_length,
             error_message=error_message,
         )
@@ -160,23 +164,31 @@ class RetrievalLogService:
         retrieval_log_id: int,
         user_id: int | None,
         feedback_type: str,
+        rating: int | None = None,
+        reason: str | None = None,
         comment: str | None = None,
         is_sample_marked: bool = False,
     ) -> tuple[RetrievalFeedback | None, str | None]:
-        """Add feedback to a retrieval log."""
+        """Add feedback to a retrieval log. Supports V2.0 fields: rating and reason."""
         log = RetrievalLogService.get_log(db, retrieval_log_id)
         if log is None:
             return None, "检索日志不存在"
 
         if feedback_type not in [FeedbackType.HELPFUL.value, FeedbackType.NOT_HELPFUL.value]:
             return None, f"无效的反馈类型: {feedback_type}"
+        
+        # V2.0: 如果 rating 未提供，从 feedback_type 推导
+        if rating is None:
+            rating = 1 if feedback_type == FeedbackType.HELPFUL.value else -1
 
         feedback = RetrievalFeedback(
             retrieval_log_id=retrieval_log_id,
             user_id=user_id,
             feedback_type=feedback_type,
+            rating=rating,  # 1 (thumbs_up) / -1 (thumbs_down)
+            reason=reason,  # V2.0 用户输入原因
             comment=comment,
-            is_sample_marked=is_sample_marked,
+            is_sample_marked=1 if is_sample_marked else 0,  # 列类型为 Integer
         )
         db.add(feedback)
         db.commit()
@@ -205,11 +217,39 @@ class RetrievalLogService:
         if feedback is None:
             return None, "反馈不存在"
 
-        feedback.is_sample_marked = is_sample
+        feedback.is_sample_marked = 1 if is_sample else 0  # 列类型为 Integer，存 1/0
         db.add(feedback)
         db.commit()
         db.refresh(feedback)
         return feedback, None
+
+    @staticmethod
+    def update_verification_metrics(
+        db: Session,
+        log_id: int,
+        confidence_score: float | None = None,
+        faithfulness_score: float | None = None,
+        refusal_reason: str | None = None,
+        refusal_message: str | None = None,
+    ) -> tuple[bool, str | None]:
+        """Update V2.0 verification metrics for a retrieval log."""
+        stmt = select(RetrievalLog).where(RetrievalLog.id == log_id)
+        log = db.execute(stmt).scalar_one_or_none()
+        if not log:
+            return False, "检索日志不存在"
+        
+        if confidence_score is not None:
+            log.confidence_score = confidence_score
+        if faithfulness_score is not None:
+            log.faithfulness_score = faithfulness_score
+        if refusal_reason is not None:
+            log.refusal_reason = refusal_reason
+        if refusal_message is not None:
+            log.refusal_message = refusal_message
+        
+        db.commit()
+        db.refresh(log)
+        return True, None
 
     # ========== 统计分析 ==========
 
@@ -269,7 +309,7 @@ class RetrievalLogService:
         sample_count = db.execute(
             select(func.count(RetrievalFeedback.id))
             .join(RetrievalLog, RetrievalFeedback.retrieval_log_id == RetrievalLog.id)
-            .where(and_(where_clause, RetrievalFeedback.is_sample_marked.is_(True)))
+            .where(and_(where_clause, RetrievalFeedback.is_sample_marked == 1))
         ).scalar() or 0
 
         # Calculate not helpful ratio

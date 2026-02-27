@@ -9,7 +9,7 @@ Date: 2026-02-13
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Float, JSON, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Float, JSON, func, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -50,6 +50,8 @@ class RetrievalLog(Base):
     min_chunk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     # JSON: [{chunk_id, content_preview, score, document_id}, ...]
     chunk_details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # B4.6: 被引用的 chunk IDs（从 answer 中解析 [ID:x] 得到）
+    cited_chunk_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
     answer_generated: Mapped[bool] = mapped_column(Integer, nullable=False, default=True)  # 是否生成了答案
     answer_length: Mapped[int | None] = mapped_column(Integer, nullable=True)
     llm_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -57,6 +59,11 @@ class RetrievalLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.now(), index=True
     )
+    # V2.0: 质量指标
+    confidence_score: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
+    faithfulness_score: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
+    refusal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refusal_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     feedbacks = relationship("RetrievalFeedback", back_populates="retrieval_log", cascade="all, delete-orphan")
@@ -66,6 +73,7 @@ class RetrievalFeedback(Base):
     """
     User feedback on retrieval results.
     Supports helpful/not_helpful marking and optional comments.
+    V2.0: 新增 rating (1/-1) 和 reason 字段
     """
 
     __tablename__ = "retrieval_feedbacks"
@@ -77,7 +85,11 @@ class RetrievalFeedback(Base):
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    feedback_type: Mapped[str] = mapped_column(String(20), nullable=False)  # helpful / not_helpful
+    # 兼容旧字段
+    feedback_type: Mapped[str] = mapped_column(String(20), nullable=True)  # helpful / not_helpful
+    # V2.0: 新增强制评分和原因字段
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1 (thumbs_up) / -1 (thumbs_down)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)  # 用户输入的原因
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_sample_marked: Mapped[bool] = mapped_column(Integer, nullable=False, default=False)  # 是否标记为问题样本
     created_at: Mapped[datetime] = mapped_column(

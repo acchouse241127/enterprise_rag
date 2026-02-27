@@ -10,6 +10,7 @@ import platform
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -148,6 +149,35 @@ def _migrate_tenant_columns() -> None:
         conn.commit()
 
 
+def _migrate_v2_chunks_and_kb() -> None:
+    """V2.0 B1-2/B1-3: chunks 表、tsv 触发器、knowledge_bases 扩展。
+       V2.0 B2-quality: retrieval_feedbacks 和 retrieval_logs 质量指标扩展。
+    """
+    migrations_dir = Path(__file__).resolve().parent / "migrations"
+    order = [
+        "V2.0_001_add_pg_jieba_extension.sql",
+        "V2.0_002_create_chunks_table.sql",
+        "V2.0_003_create_chunks_tsv_trigger.sql",
+        "V2.0_005_alter_knowledge_bases.sql",
+        "V2.0_004_alter_retrieval_feedbacks.sql",  # B2: feedback rating/reason
+        "V2.0_006_alter_retrieval_logs.sql",     # B2: quality metrics + refusal
+    ]
+    with engine.connect() as conn:
+        for name in order:
+            path = migrations_dir / name
+            if not path.exists():
+                continue
+            sql = path.read_text(encoding="utf-8").strip()
+            if not sql:
+                continue
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                get_operation_logger().warning("V2.0 migrate %s: %s", name, e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
@@ -160,6 +190,7 @@ async def lifespan(app: FastAPI):
         ("knowledge_bases.chunk_*", _migrate_knowledge_bases_chunk_columns),
         ("documents.source_url", _migrate_documents_source_url),
         ("tenant_id", _migrate_tenant_columns),
+        ("V2.0 chunks+kb", _migrate_v2_chunks_and_kb),
     ]:
         try:
             migrate()
@@ -286,7 +317,6 @@ def create_app() -> FastAPI:
         try:
             db = SessionLocal()
             kb_count = db.query(KnowledgeBase).count()
-            doc_count = db.query(Document).count()
             db.close()
             prom_metrics.KNOWLEDGE_BASES_TOTAL.set(kb_count)
         except Exception:
@@ -341,3 +371,13 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
+
+if __name__ == "__main__":
+    import uvicorn
+    from app.config import settings
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=(settings.env == "development"),
+    )

@@ -23,7 +23,9 @@ router = APIRouter()
 class FeedbackCreate(BaseModel):
     """Request body for adding feedback."""
     retrieval_log_id: int
-    feedback_type: str  # helpful / not_helpful
+    feedback_type: str  # helpful / not_helpful (兼容字段)
+    rating: int  # 1 (thumbs_up) / -1 (thumbs_down)
+    reason: str | None = None  # 用户输入原因
     comment: str | None = None
 
 
@@ -172,6 +174,8 @@ def add_feedback(
         retrieval_log_id=body.retrieval_log_id,
         user_id=current_user.id,
         feedback_type=body.feedback_type,
+        rating=body.rating,
+        reason=body.reason,
         comment=body.comment,
     )
     if err:
