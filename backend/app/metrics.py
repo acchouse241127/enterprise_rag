@@ -150,3 +150,30 @@ def get_metrics() -> bytes:
 def get_content_type() -> str:
     """Get Prometheus content type."""
     return CONTENT_TYPE_LATEST
+
+# ============== V2.0 Quality Assurance Metrics ==============
+QA_CONFIDENCE_SCORE = Histogram(
+    "qa_confidence_score",
+    "Answer confidence score distribution",
+    ["knowledge_base_id"],
+    buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+)
+
+QA_FAITHFULNESS_SCORE = Histogram(
+    "qa_faithfulness_score",
+    "Answer faithfulness score distribution",
+    ["knowledge_base_id"],
+    buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+)
+
+QA_REFUSAL_TOTAL = Counter(
+    "qa_refusal_total",
+    "Total QA refusals",
+    ["knowledge_base_id", "refusal_reason"]
+)
+
+QA_VERIFICATION_ACTION_TOTAL = Counter(
+    "qa_verification_action_total",
+    "Total QA verification actions",
+    ["knowledge_base_id", "action"]  # pass, filter, retry, refuse
+)
