@@ -97,28 +97,28 @@ class VerifyPipeline:
         citation: CitationResult,
     ) -> VerificationResult:
         """决策验证动作."""
-       忠诚度 = hallucination.faithfulness_score
-        置信度 = confidence.score
-        引用准确度 = citation.citation_accuracy
+        faithfulness = hallucination.faithfulness_score
+        confidence_val = confidence.score
+        citation_acc = citation.citation_accuracy
 
         # 检查是否拒答
-        if 置信度 < self.refusal_threshold or 忠诚度 < self.refusal_threshold:
+        if confidence_val < self.refusal_threshold or faithfulness < self.refusal_threshold:
             return VerificationResult(
                 action=VerificationAction.REFUSE,
                 confidence_score=confidence,
                 citation_result=citation,
                 refusal_message="根据现有知识库内容，无法提供可靠答案。",
-                reason=f"低置信度: {置信度:.2f}",
+                reason=f"低置信度: {confidence_val:.2f}",
             )
 
         # 检查引用准确性
-        if 引用准确度 < self.citation_threshold:
+        if citation_acc < self.citation_threshold:
             return VerificationResult(
                 action=VerificationAction.FILTER,
                 confidence_score=confidence,
                 citation_result=citation,
                 refusal_message=None,
-                reason=f"引用准确度不足: {引用准确度:.2f}",
+                reason=f"引用准确度不足: {citation_acc:.2f}",
             )
 
         # 通过
@@ -127,5 +127,7 @@ class VerifyPipeline:
             confidence_score=confidence,
             citation_result=citation,
             refusal_message=None,
-            reason=f"通过: 置信度=.{置信度:.2f}, 引用准确度={引用准确度:.2f}",
+            reason=f"通过: 置信度={confidence_val:.2f}, 引用准确度={citation_acc:.2f}",
         )
+
+

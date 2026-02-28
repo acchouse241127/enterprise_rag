@@ -18,9 +18,11 @@ openpyxl
 python-pptx
 chromadb
 sentence-transformers
+tiktoken
 httpx
 slowapi
 pytest
+pytest-cov
 # Phase 3.3
 prometheus_client
 reportlab

@@ -3,7 +3,7 @@ services:
   # 基础服务（数据库）
   # ===========================================
   postgres:
-    image: postgres:16-alpine
+    image: enterprise_rag_postgres:pg_jieba
     container_name: enterprise_rag_postgres
     restart: unless-stopped
     environment:
@@ -132,6 +132,7 @@ services:
     environment:
       - API_BASE_URL=http://backend:8000/api
       - BACKEND_URL=http://backend:8000
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:8501}
       - TZ=Asia/Shanghai
     depends_on:
       - backend
@@ -141,6 +142,22 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  # React SPA 前端（主入口）
+  spa:
+    build:
+      context: ./frontend_spa
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_spa
+    restart: unless-stopped
+    ports:
+      - "${SPA_PORT:-3000}:80"
+    depends_on:
+      - backend
     networks:
       - rag_network
     profiles:
