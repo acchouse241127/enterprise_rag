@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
+import ipaddress
 import logging
+import re
+import socket
+from urllib.parse import urlparse
 import time
 from collections.abc import Iterator
 from typing import Any
@@ -11,11 +15,24 @@ from typing import Any
 from app.config import settings
 
 logger = logging.getLogger(__name__)
-from app.llm import ChatMessage, LlmProviderError, get_provider_for_task
+from app.llm import ChatMessage, LlmProviderError, build_chat_provider, get_provider_for_task
 from app.services.conversation_service import ConversationService
 from app.rag import BgeM3EmbeddingService, BgeRerankerService, ChromaVectorStore, RagPipeline, VectorRetriever, deduplicate_chunks
-from app.rag.query_expansion import expand_query
+from app.rag.query_expansion import expand_query, ExpansionMode
 from app.rag.keyword_retriever import KeywordRetriever
+
+# V2.0 质量保障模块导入
+from app.verify.nli_detector import NLIHallucinationDetector
+from app.verify.confidence_scorer import ConfidenceScorer
+from app.verify.citation_verifier import CitationVerifier
+from app.verify.verify_pipeline import VerifyPipeline, VerificationAction
+from app.verify.refusal import RefusalHandler
+
+# V2.0 质量保障配置
+_verification_enabled = getattr(settings, "verification_enabled", False)
+_confidence_threshold = getattr(settings, "verification_confidence_threshold", 0.5)
+_citation_threshold = getattr(settings, "verification_citation_threshold", 0.5)
+_refusal_threshold = getattr(settings, "verification_refusal_threshold", 0.3)
 
 
 class QaService:
@@ -39,6 +56,33 @@ class QaService:
     _reranker = BgeRerankerService(model_name=settings.reranker_model_name)
     _pipeline = RagPipeline(_retriever, _embedding_service)
     _conversation_history: dict[str, list[ChatMessage]] = {}
+    _expansion_timeout_max: int = 30
+    _expansion_max_retries_max: int = 2
+    _expansion_retry_delay_max: float = 5.0
+
+    # V2.0 质量保障 Pipeline（延迟初始化）
+    _verify_pipeline: VerifyPipeline | None = None
+
+    @classmethod
+    def _get_verify_pipeline(cls) -> VerifyPipeline | None:
+        """获取验证 Pipeline（延迟初始化以避免启动时加载模型）。"""
+        if not _verification_enabled:
+            return None
+        if cls._verify_pipeline is None:
+            try:
+                nli_detector = NLIHallucinationDetector()
+                cls._verify_pipeline = VerifyPipeline(
+                    nli_detector=nli_detector,
+                    confidence_threshold=_confidence_threshold,
+                    citation_threshold=_citation_threshold,
+                    refusal_threshold=_refusal_threshold,
+                )
+                logger.info("VerifyPipeline initialized with thresholds: confidence=%.2f, citation=%.2f, refusal=%.2f",
+                           _confidence_threshold, _citation_threshold, _refusal_threshold)
+            except Exception as e:
+                logger.warning("Failed to initialize VerifyPipeline: %s", e)
+                return None
+        return cls._verify_pipeline
 
     @staticmethod
     def _filter_by_similarity(chunks: list[dict]) -> list[dict]:
@@ -123,6 +167,95 @@ class QaService:
         return reranked
 
     @staticmethod
+    def _parse_cited_ids(answer: str) -> list[int]:
+        """Parse [ID:x] citations from answer text."""
+        if not answer:
+            return []
+        matches = re.findall(r"\[ID:(\d+)\]", answer)
+        return [int(m) for m in matches]
+
+    @staticmethod
+    def _is_safe_public_base_url(base_url: str) -> bool:
+        """Allow only public http(s) endpoints to reduce SSRF risk."""
+        parsed = urlparse((base_url or "").strip())
+        if parsed.scheme not in {"http", "https"}:
+            return False
+        hostname = (parsed.hostname or "").lower()
+        if not hostname:
+            return False
+        if hostname in {"localhost", "127.0.0.1", "::1"} or hostname.endswith(".local"):
+            return False
+        try:
+            ip = ipaddress.ip_address(hostname)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                return False
+        except ValueError:
+            # Domain name: resolve and reject if any resolved address is non-public.
+            try:
+                port = parsed.port or (443 if parsed.scheme == "https" else 80)
+                infos = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+                for info in infos:
+                    resolved = info[4][0]
+                    ip = ipaddress.ip_address(resolved)
+                    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                        return False
+            except Exception:
+                return False
+        return True
+
+    @staticmethod
+    def _resolve_query_expansion_config(
+        query_expansion_mode: ExpansionMode | None = None,
+        query_expansion_target: str | None = None,
+        query_expansion_llm: dict[str, Any] | None = None,
+    ) -> tuple[ExpansionMode, Any]:
+        """Resolve request-level query expansion mode and provider with fallback chain."""
+        mode = (query_expansion_mode or getattr(settings, "retrieval_query_expansion_mode", "rule"))
+        target = (query_expansion_target or "default").lower()
+        provider = None
+
+        if mode in ("llm", "hybrid"):
+            try:
+                # Request-level explicit provider config has highest priority.
+                if query_expansion_llm:
+                    base_url = query_expansion_llm.get("base_url")
+                    if base_url and not QaService._is_safe_public_base_url(str(base_url)):
+                        raise ValueError("Unsafe query expansion base_url")
+
+                    timeout_seconds = query_expansion_llm.get("timeout_seconds")
+                    if timeout_seconds is not None:
+                        timeout_seconds = min(int(timeout_seconds), QaService._expansion_timeout_max)
+                    max_retries = query_expansion_llm.get("max_retries")
+                    if max_retries is not None:
+                        max_retries = min(int(max_retries), QaService._expansion_max_retries_max)
+                    retry_base_delay = query_expansion_llm.get("retry_base_delay")
+                    if retry_base_delay is not None:
+                        retry_base_delay = min(float(retry_base_delay), QaService._expansion_retry_delay_max)
+
+                    provider = build_chat_provider(
+                        provider=query_expansion_llm.get("provider"),
+                        api_key=query_expansion_llm.get("api_key"),
+                        model_name=query_expansion_llm.get("model_name"),
+                        base_url=base_url,
+                        timeout_seconds=timeout_seconds,
+                        max_retries=max_retries,
+                        retry_base_delay=retry_base_delay,
+                    )
+                else:
+                    if target == "local":
+                        # Local target is reserved for future rollout; fallback to default chain now.
+                        logger.info("query_expansion_target=local but local provider is unavailable, fallback to default")
+                    provider = get_provider_for_task("query_expansion")
+            except Exception as e:
+                logger.warning("LLM provider not available for query expansion: %s", e)
+                try:
+                    provider = get_provider_for_task("query_expansion")
+                except Exception:
+                    provider = None
+
+        return mode, provider
+
+    @staticmethod
     def _log_retrieval(
         knowledge_base_id: int,
         user_id: int | None,
@@ -139,6 +272,15 @@ class QaService:
         answer_generated: bool = True,
         answer_length: int | None = None,
         error_message: str | None = None,
+        answer: str | None = None,  # B4.6: for parsing cited_chunk_ids
+        # V2.0 质量保障字段
+        confidence_score: float | None = None,
+        faithfulness_score: float | None = None,
+        has_hallucination: bool | None = None,
+        retrieval_mode: str | None = None,
+        refusal_reason: str | None = None,
+        citation_accuracy: float | None = None,
+        latency_breakdown: dict | None = None,
     ) -> int | None:
         """Log retrieval to database (Phase 3.2). Returns log_id if successful."""
         if not settings.retrieval_log_enabled:
@@ -165,6 +307,9 @@ class QaService:
                 for c in final_chunks[:settings.retrieval_log_max_chunks]
             ]
 
+            # B4.6: Parse cited chunk IDs from answer
+            cited_chunk_ids = QaService._parse_cited_ids(answer) if answer else None
+
             db = SessionLocal()
             try:
                 log = RetrievalLogService.create_log(
@@ -180,6 +325,7 @@ class QaService:
                     avg_chunk_score=avg_score,
                     min_chunk_score=min_score,
                     chunk_details=chunk_details,
+                    cited_chunk_ids=cited_chunk_ids,
                     retrieval_time_ms=retrieval_time_ms,
                     rerank_time_ms=rerank_time_ms,
                     total_time_ms=total_time_ms,
@@ -187,6 +333,14 @@ class QaService:
                     answer_generated=answer_generated,
                     answer_length=answer_length,
                     error_message=error_message,
+                    # V2.0 质量保障字段
+                    confidence_score=confidence_score,
+                    faithfulness_score=faithfulness_score,
+                    has_hallucination=has_hallucination,
+                    retrieval_mode=retrieval_mode,
+                    refusal_reason=refusal_reason,
+                    citation_accuracy=citation_accuracy,
+                    latency_breakdown=latency_breakdown,
                 )
                 logger.info("retrieval_log created id=%s kb_id=%s", log.id, knowledge_base_id)
                 return log.id
@@ -205,15 +359,36 @@ class QaService:
         history_turns: int | None = None,
         user_id: int | None = None,  # Phase 3.2: for retrieval logging
         system_prompt_version: str | None = None,
+        strategy: str | None = None,  # B4.4: retrieval strategy
+        query_expansion_mode: ExpansionMode | None = None,
+        query_expansion_target: str | None = None,
+        query_expansion_llm: dict[str, Any] | None = None,
     ) -> tuple[dict[str, Any] | None, str | None]:
         start_time = time.perf_counter()
-        final_top_k = top_k if top_k is not None else settings.retrieval_top_k
-        retrieve_top_k = max(final_top_k, settings.reranker_candidate_k) if settings.reranker_enabled else final_top_k
+
+        # B4.3/B4.4: 应用检索策略
+        from app.rag.retrieval_strategy import get_strategy
+        strat = get_strategy(strategy or settings.retrieval_strategy)
+
+        final_top_k = top_k if top_k is not None else strat.top_k
+        retrieve_top_k = max(final_top_k, strat.reranker_candidate_k) if settings.reranker_enabled else final_top_k
+        use_expansion = strat.expansion_enabled and settings.retrieval_query_expansion_enabled
+        use_keyword = strat.keyword_enabled and settings.retrieval_use_keyword
 
         retrieval_start = time.perf_counter()
         queries = [question]
-        if getattr(settings, "retrieval_query_expansion_enabled", False):
-            queries = expand_query(question, max_extra=2) or [question]
+        if use_expansion:
+            expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
+                query_expansion_mode=query_expansion_mode,
+                query_expansion_target=query_expansion_target,
+                query_expansion_llm=query_expansion_llm,
+            )
+            queries = expand_query(
+                question,
+                mode=expansion_mode,
+                llm_provider=expansion_llm,
+                max_extra=2
+            ) or [question]
         seen_ids = set()
         chunks = []
         for q in queries:
@@ -229,7 +404,7 @@ class QaService:
                 if cid and cid not in seen_ids:
                     seen_ids.add(cid)
                     chunks.append(c)
-        if getattr(settings, "retrieval_use_keyword", False):
+        if use_keyword:
             kw_chunks, _ = QaService._keyword_retriever.retrieve(
                 knowledge_base_id=knowledge_base_id,
                 query=question,
@@ -343,10 +518,41 @@ class QaService:
         llm_time_ms = int((time.perf_counter() - llm_start) * 1000)
         total_time_ms = int((time.perf_counter() - start_time) * 1000)
 
-        answer, citations = QaService._pipeline.insert_citations(raw_answer, chunks)
+        answer, citations = QaService._pipeline.insert_citations(raw_answer, chunks, query=question)
+        
+        # V2.0: 质量保障验证
+        verification_result = None
+        confidence_score = None
+        faithfulness_score = None
+        has_hallucination = None
+        citation_accuracy = None
+        refusal_reason = None
+        
+        verify_pipeline = QaService._get_verify_pipeline()
+        if verify_pipeline:
+            try:
+                contexts = [c.get("content", "") for c in chunks if c.get("content")]
+                avg_score = sum(c.get("rerank_score", 0) for c in chunks) / len(chunks) if chunks else 0
+                verification_result = verify_pipeline.verify(answer, contexts, avg_score)
+                
+                # 提取验证指标
+                if verification_result.confidence_score:
+                    confidence_score = verification_result.confidence_score.score
+                if verification_result.confidence_score and hasattr(verification_result.confidence_score, 'faithfulness'):
+                    faithfulness_score = verification_result.confidence_score.faithfulness
+                if verification_result.action == VerificationAction.REFUSE:
+                    refusal_reason = verification_result.reason
+                if verification_result.citation_result:
+                    citation_accuracy = verification_result.citation_result.citation_accuracy
+                
+                logger.info("V2.0 verification: action=%s confidence=%.2f reason=%s",
+                           verification_result.action.value, confidence_score or 0, verification_result.reason)
+            except Exception as e:
+                logger.warning("V2.0 verification failed: %s", e)
+        
         QaService._append_history(knowledge_base_id, conversation_id, question, answer)
 
-        # Log successful retrieval
+        # Log successful retrieval with V2.0 metrics
         log_id = QaService._log_retrieval(
             knowledge_base_id=knowledge_base_id,
             user_id=user_id,
@@ -362,6 +568,20 @@ class QaService:
             total_time_ms=total_time_ms,
             answer_generated=True,
             answer_length=len(answer),
+            answer=answer,  # B4.6: for cited_chunk_ids
+            # V2.0 质量保障字段
+            confidence_score=confidence_score,
+            faithfulness_score=faithfulness_score,
+            has_hallucination=has_hallucination,
+            retrieval_mode="hybrid",
+            refusal_reason=refusal_reason,
+            citation_accuracy=citation_accuracy,
+            latency_breakdown={
+                "retrieval_ms": retrieval_time_ms,
+                "rerank_ms": rerank_time_ms,
+                "llm_ms": llm_time_ms,
+                "total_ms": total_time_ms,
+            },
         )
 
         return {
@@ -370,6 +590,12 @@ class QaService:
             "retrieved_count": len(chunks),
             "conversation_id": conversation_id,
             "retrieval_log_id": log_id,  # Phase 3.2
+            # V2.0 质量保障返回字段
+            "verification": {
+                "action": verification_result.action.value if verification_result else None,
+                "confidence_score": confidence_score,
+                "citation_accuracy": citation_accuracy,
+            } if verification_result else None,
         }, None
 
     @staticmethod
@@ -381,15 +607,36 @@ class QaService:
         history_turns: int | None = None,
         user_id: int | None = None,  # Phase 3.2: for retrieval logging
         system_prompt_version: str | None = None,
+        strategy: str | None = None,  # B4.4: retrieval strategy
+        query_expansion_mode: ExpansionMode | None = None,
+        query_expansion_target: str | None = None,
+        query_expansion_llm: dict[str, Any] | None = None,
     ) -> Iterator[str]:
         start_time = time.perf_counter()
-        final_top_k = top_k if top_k is not None else settings.retrieval_top_k
-        retrieve_top_k = max(final_top_k, settings.reranker_candidate_k) if settings.reranker_enabled else final_top_k
+
+        # B4.3/B4.4: 应用检索策略
+        from app.rag.retrieval_strategy import get_strategy
+        strat = get_strategy(strategy or settings.retrieval_strategy)
+
+        final_top_k = top_k if top_k is not None else strat.top_k
+        retrieve_top_k = max(final_top_k, strat.reranker_candidate_k) if settings.reranker_enabled else final_top_k
+        use_expansion = strat.expansion_enabled and settings.retrieval_query_expansion_enabled
+        use_keyword = strat.keyword_enabled and settings.retrieval_use_keyword
 
         retrieval_start = time.perf_counter()
         queries = [question]
-        if getattr(settings, "retrieval_query_expansion_enabled", False):
-            queries = expand_query(question, max_extra=2) or [question]
+        if use_expansion:
+            expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
+                query_expansion_mode=query_expansion_mode,
+                query_expansion_target=query_expansion_target,
+                query_expansion_llm=query_expansion_llm,
+            )
+            queries = expand_query(
+                question,
+                mode=expansion_mode,
+                llm_provider=expansion_llm,
+                max_extra=2
+            ) or [question]
         seen_ids = set()
         chunks = []
         for q in queries:
@@ -406,7 +653,7 @@ class QaService:
                 if cid and cid not in seen_ids:
                     seen_ids.add(cid)
                     chunks.append(c)
-        if getattr(settings, "retrieval_use_keyword", False):
+        if use_keyword:
             kw_chunks, _ = QaService._keyword_retriever.retrieve(
                 knowledge_base_id=knowledge_base_id,
                 query=question,
@@ -520,9 +767,36 @@ class QaService:
                 )
             except Exception:
                 pass  # 持久化失败不影响流式响应
-        _, citations = QaService._pipeline.insert_citations(merged, chunks)
+        _, citations = QaService._pipeline.insert_citations(merged, chunks, query=question)
 
-        # Log successful retrieval
+        # V2.0: 质量保障验证
+        verification_result = None
+        confidence_score = None
+        faithfulness_score = None
+        has_hallucination = None
+        citation_accuracy = None
+        refusal_reason = None
+        
+        verify_pipeline = QaService._get_verify_pipeline()
+        if verify_pipeline and merged:
+            try:
+                contexts = [c.get("content", "") for c in chunks if c.get("content")]
+                avg_score = sum(c.get("rerank_score", 0) for c in chunks) / len(chunks) if chunks else 0
+                verification_result = verify_pipeline.verify(merged, contexts, avg_score)
+                
+                if verification_result.confidence_score:
+                    confidence_score = verification_result.confidence_score.score
+                if verification_result.action == VerificationAction.REFUSE:
+                    refusal_reason = verification_result.reason
+                if verification_result.citation_result:
+                    citation_accuracy = verification_result.citation_result.citation_accuracy
+                
+                logger.info("V2.0 stream verification: action=%s confidence=%.2f",
+                           verification_result.action.value, confidence_score or 0)
+            except Exception as e:
+                logger.warning("V2.0 stream verification failed: %s", e)
+
+        # Log successful retrieval with V2.0 metrics
         log_id = QaService._log_retrieval(
             knowledge_base_id=knowledge_base_id,
             user_id=user_id,
@@ -538,8 +812,25 @@ class QaService:
             total_time_ms=total_time_ms,
             answer_generated=True,
             answer_length=len(merged),
+            answer=merged,  # B4.6: for cited_chunk_ids
+            # V2.0 质量保障字段
+            confidence_score=confidence_score,
+            faithfulness_score=faithfulness_score,
+            has_hallucination=has_hallucination,
+            retrieval_mode="hybrid",
+            refusal_reason=refusal_reason,
+            citation_accuracy=citation_accuracy,
+            latency_breakdown={
+                "retrieval_ms": retrieval_time_ms,
+                "rerank_ms": rerank_time_ms,
+                "llm_ms": llm_time_ms,
+                "total_ms": total_time_ms,
+            },
         )
 
         yield f"data: {json.dumps({'type': 'citations', 'data': citations}, ensure_ascii=False)}\n\n"
         yield f"data: {json.dumps({'type': 'retrieval_log_id', 'data': log_id}, ensure_ascii=False)}\n\n"
+        # V2.0: 发送验证结果
+        if verification_result:
+            yield f"data: {json.dumps({'type': 'verification', 'data': {'action': verification_result.action.value, 'confidence_score': confidence_score, 'citation_accuracy': citation_accuracy}}, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"

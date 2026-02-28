@@ -43,14 +43,27 @@ class RetrievalLogService:
         answer_generated: bool = True,
         answer_length: int | None = None,
         error_message: str | None = None,
+        # V2.0 质量保障字段
+        confidence_score: float | None = None,
+        faithfulness_score: float | None = None,
+        has_hallucination: bool | None = None,
+        retrieval_mode: str | None = None,
+        refusal_reason: str | None = None,
+        refusal_message: str | None = None,
+        citation_accuracy: float | None = None,
+        latency_breakdown: dict | None = None,
     ) -> RetrievalLog:
-        """Create a retrieval log entry."""
+        """Create a retrieval log entry with V2.0 quality metrics."""
         # Trim chunk_details if too many
         if chunk_details and len(chunk_details) > settings.retrieval_log_max_chunks:
             chunk_details = chunk_details[:settings.retrieval_log_max_chunks]
 
         # answer_generated 在 DB 中为 INTEGER(0/1)，需显式转换避免 PostgreSQL 类型不匹配
         answer_gen_int = 1 if answer_generated else 0
+        
+        # V2.0: 转换布尔值为整数
+        has_hallucination_int = 1 if has_hallucination else (0 if has_hallucination is False else None)
+        
         log = RetrievalLog(
             knowledge_base_id=knowledge_base_id,
             user_id=user_id,
@@ -72,6 +85,15 @@ class RetrievalLogService:
             answer_generated=answer_gen_int,
             answer_length=answer_length,
             error_message=error_message,
+            # V2.0 质量保障字段
+            confidence_score=confidence_score,
+            faithfulness_score=faithfulness_score,
+            has_hallucination=has_hallucination_int,
+            retrieval_mode=retrieval_mode or "hybrid",
+            refusal_reason=refusal_reason,
+            refusal_message=refusal_message,
+            citation_accuracy=citation_accuracy,
+            latency_breakdown=latency_breakdown or {},
         )
         db.add(log)
         db.commit()

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     log_level: str = "INFO"
     env: str = "development"  # development | production；生产环境不向响应泄露异常详情
-    cors_origins: str = "http://localhost:3000"  # 逗号分隔，SPA 跨域白名单
+    cors_origins: str = "http://localhost:3000,http://localhost:8501"  # 逗号分隔，SPA 3000 + Streamlit 8501
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432
@@ -41,9 +41,10 @@ class Settings(BaseSettings):
     embedding_model_name: str = "BAAI/bge-m3"
     embedding_fallback_dim: int = 64
     retrieval_top_k: int = 5
-    retrieval_use_keyword: bool = False  # 是否启用关键词一路召回（与向量合并）
-    retrieval_query_expansion_enabled: bool = False  # 是否启用多 query 检索（当前为 stub）
-    retrieval_strategy: str = "default"  # default | high_recall | high_precision | low_latency（预留）
+    retrieval_use_keyword: bool = True  # 是否启用关键词一路召回（与向量合并）
+    retrieval_query_expansion_enabled: bool = True  # 是否启用查询扩展
+    retrieval_query_expansion_mode: str = "rule"  # rule | llm | hybrid（查询扩展模式）
+    retrieval_strategy: str = "default"  # default | high_recall | high_precision | low_latency
     reranker_enabled: bool = True
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
     reranker_candidate_k: int = 12  # 候选数越小越快，20 易导致首字等待 3~8 秒
@@ -82,6 +83,12 @@ class Settings(BaseSettings):
     # 检索质量看板配置（Phase 3.2）
     retrieval_log_enabled: bool = True
     retrieval_log_max_chunks: int = 20  # 日志中记录的最大 chunk 数
+
+    # V2.0 质量保障配置
+    verification_enabled: bool = False  # 是否启用答案验证（NLI 模型加载较慢，默认关闭）
+    verification_confidence_threshold: float = 0.5  # 置信度阈值
+    verification_citation_threshold: float = 0.5  # 引用准确度阈值
+    verification_refusal_threshold: float = 0.3  # 拒答阈值（低于此值将拒答）
 
     # Redis & Celery（队列与 Worker）
     redis_url: str = "redis://localhost:6379/0"
