@@ -145,6 +145,18 @@ NLI 幻觉检测（B2-1）
 **预计额外耗时：~30-40 分钟**
 ---
 
+## Docker 容器说明（V2.0）
+
+**必须的容器**（compose 管理）：enterprise_rag_postgres, enterprise_rag_chromadb, enterprise_rag_redis, enterprise_rag_backend, enterprise_rag_frontend；可选 enterprise_rag_spa, enterprise_rag_worker（需 `docker compose --profile full up -d`）。
+
+**可删除的多余容器**：kind_goldberg、beautiful_hodgkin、relaxed_lalande。删除命令：`docker rm kind_goldberg beautiful_hodgkin relaxed_lalande`。
+
+**Streamlit 显示「用户名和密码错误」**：数据库可能尚无 admin 用户。在项目根目录执行：`docker compose exec backend python -m scripts.create_admin_user`，然后使用 admin / password123 登录。
+
+**SPA 显示「无法访问此网站」**：确认 spa 容器已启动，访问 `http://localhost:3000`（或 SPA_PORT）。**SPA 前端修改后生效**：已挂载 `frontend_spa/dist`，在 `frontend_spa` 下执行 `npm run build`，再在项目根执行 `docker compose --profile full restart spa` 即可，无需重建镜像。仅当修改 `frontend_spa/nginx.conf` 或 Dockerfile 时才需 `docker compose --profile full build spa`。
+
+---
+
 ## B3 优化与测试阶段
 
 || 任务 | 状态 ||
