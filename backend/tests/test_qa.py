@@ -156,3 +156,79 @@ def test_qa_unauthorized(client: TestClient) -> None:
         json={"knowledge_base_id": 1, "question": "测试"},
     )
     assert resp.status_code == 401
+
+
+def test_qa_ask_passes_query_expansion_options(
+    monkeypatch,
+    client: TestClient,
+    auth_headers: dict,
+) -> None:
+    captured: dict = {}
+
+    def _fake_ask(
+        knowledge_base_id: int,
+        question: str,
+        top_k: int | None = None,
+        conversation_id: str | None = None,
+        history_turns: int | None = None,
+        user_id: int | None = None,
+        system_prompt_version: str | None = None,
+        strategy: str | None = None,
+        query_expansion_mode: str | None = None,
+        query_expansion_target: str | None = None,
+        query_expansion_llm: dict | None = None,
+        **kwargs: object,  # 捕获额外参数，保持签名灵活性
+    ):
+        captured["knowledge_base_id"] = knowledge_base_id
+        captured["question"] = question
+        captured["strategy"] = strategy
+        captured["query_expansion_mode"] = query_expansion_mode
+        captured["query_expansion_target"] = query_expansion_target
+        captured["query_expansion_llm"] = query_expansion_llm
+        _ = top_k, conversation_id, history_turns, user_id, system_prompt_version, kwargs  # 标记未使用
+        return (
+            {
+                "answer": "ok",
+                "citations": [],
+                "retrieved_count": 0,
+            },
+            None,
+        )
+
+    monkeypatch.setattr("app.api.qa.QaService.ask", _fake_ask)
+    resp = client.post(
+        "/api/qa/ask",
+        json={
+            "knowledge_base_id": 1,
+            "question": "测试问题",
+            "strategy": "high_precision",
+            "query_expansion_mode": "hybrid",
+            "query_expansion_target": "cloud",
+            "query_expansion_llm": {
+                "provider": "openai",
+                "model_name": "kimi-k2.5",
+                "base_url": "https://example.com/v1",
+                "api_key": "test-key-do-not-use-in-production",  # 测试凭证，明确标记
+                "temperature": 0.5,
+                "timeout_seconds": 30,
+                "max_retries": 2,
+                "retry_base_delay": 0.2,
+            },
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["code"] == 0
+    assert captured["query_expansion_mode"] == "hybrid"
+    assert captured["query_expansion_target"] == "cloud"
+    assert captured["query_expansion_llm"]["model_name"] == "kimi-k2.5"
+
+
+def test_qa_expansion_meta_api(client: TestClient, auth_headers: dict) -> None:
+    resp = client.get("/api/qa/expansion-meta", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["code"] == 0
+    assert "default_mode" in body["data"]
+    assert body["data"]["local_available"] is False
+    assert "hybrid" in body["data"]["supported_modes"]

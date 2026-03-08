@@ -1,20 +1,20 @@
-# Backend - Backend-Focused Development
+# Backend - Backend-Focused Development / 后端 - 后端聚焦开发
 
 Backend-focused workflow (Research → Ideation → Plan → Execute → Optimize → Review), Codex-led.
 
-## Usage
+## Usage / 用法
 
 ```bash
 /backend <backend task description>
 ```
 
-## Context
+## Context / 上下文
 
 - Backend task: $ARGUMENTS
 - Codex-led, Gemini for auxiliary reference
 - Applicable: API design, algorithm implementation, database optimization, business logic
 
-## Your Role
+## Your Role / 你的角色
 
 You are the **Backend Orchestrator**, coordinating multi-model collaboration for server-side tasks (Research → Ideation → Plan → Execute → Optimize → Review).
 
@@ -25,7 +25,7 @@ You are the **Backend Orchestrator**, coordinating multi-model collaboration for
 
 ---
 
-## Multi-Model Call Specification
+## Multi-Model Call Specification / 多模型调用规范
 
 **Call Syntax**:
 
@@ -73,7 +73,7 @@ EOF",
 
 ---
 
-## Communication Guidelines
+## Communication Guidelines / 沟通指南
 
 1. Start responses with mode label `[Mode: X]`, initial is `[Mode: Research]`
 2. Follow strict sequence: `Research → Ideation → Plan → Execute → Optimize → Review`
@@ -81,7 +81,7 @@ EOF",
 
 ---
 
-## Core Workflow
+## Core Workflow / 核心工作流
 
 ### Phase 0: Prompt Enhancement (Optional)
 
@@ -150,7 +150,7 @@ Integrate review feedback, execute optimization after user confirmation.
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. **Codex backend opinions are trustworthy**
 2. **Gemini backend opinions for reference only**

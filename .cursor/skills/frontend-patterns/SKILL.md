@@ -1,9 +1,10 @@
 ---
 name: frontend-patterns
 description: Frontend development patterns for React, Next.js, state management, performance optimization, and UI best practices.
+description_zh: React、Next.js、状态管理、性能优化与 UI 最佳实践的前端开发模式。
 ---
 
-# Frontend Development Patterns
+# Frontend Development Patterns / 前端开发模式
 
 Modern frontend patterns for React, Next.js, and performant user interfaces.
 

@@ -1,0 +1,205 @@
+# Evaluation QA Set - V2.0 (Annotated Template)
+#
+# This file contains questions designed to test retrieval quality.
+# After importing documents into your knowledge base, run:
+#   python scripts/auto_annotate_eval_set.py --qa-set tests/fixtures/eval_qa_set_v2.yaml --kb-id <your_kb_id>
+#
+# Format:
+#   id: Unique identifier
+#   question: User question
+#   expected_chunk_ids: List of correct chunk IDs (auto-filled by script, requires manual review)
+#   knowledge_base_id: Knowledge base to query
+#   category: Question type for analysis
+#   difficulty: easy/medium/hard (for metric breakdown)
+#
+# Usage:
+#   python scripts/eval_retrieval.py --qa-set tests/fixtures/eval_qa_set_v2.yaml
+
+# ===========================================
+# Category: RAG Concepts (General Knowledge)
+# ===========================================
+
+- id: rag_001
+  question: "什么是 RAG 检索增强生成？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "RAG Concepts"
+  difficulty: "easy"
+
+- id: rag_002
+  question: "RAG 系统如何提高答案准确性？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "RAG Concepts"
+  difficulty: "medium"
+
+- id: rag_003
+  question: "混合检索相比纯向量检索有什么优势？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "RAG Concepts"
+  difficulty: "medium"
+
+# ===========================================
+# Category: System Features
+# ===========================================
+
+- id: sys_001
+  question: "如何创建新的知识库？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "System Features"
+  difficulty: "easy"
+
+- id: sys_002
+  question: "系统支持哪些文档格式上传？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "System Features"
+  difficulty: "easy"
+
+- id: sys_003
+  question: "如何配置检索策略？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "System Features"
+  difficulty: "medium"
+
+- id: sys_004
+  question: "什么是父文档检索？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "System Features"
+  difficulty: "medium"
+
+- id: sys_005
+  question: "如何查看检索日志和反馈统计？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "System Features"
+  difficulty: "easy"
+
+# ===========================================
+# Category: Retrieval Quality
+# ===========================================
+
+- id: ret_001
+  question: "BM25 和向量检索有什么区别？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Retrieval Quality"
+  difficulty: "medium"
+
+- id: ret_002
+  question: "RRF 融合算法如何工作？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Retrieval Quality"
+  difficulty: "hard"
+
+- id: ret_003
+  question: "Reranker 重排序的作用是什么？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Retrieval Quality"
+  difficulty: "medium"
+
+- id: ret_004
+  question: "如何选择合适的分块策略？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Retrieval Quality"
+  difficulty: "medium"
+
+# ===========================================
+# Category: Query Expansion
+# ===========================================
+
+- id: exp_001
+  question: "查询扩展有哪几种模式？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Query Expansion"
+  difficulty: "medium"
+
+- id: exp_002
+  question: "LLM 查询扩展如何提高检索效果？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Query Expansion"
+  difficulty: "medium"
+
+# ===========================================
+# Category: Quality Assurance
+# ===========================================
+
+- id: qa_001
+  question: "系统如何检测答案中的幻觉？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Quality Assurance"
+  difficulty: "hard"
+
+- id: qa_002
+  question: "什么是置信度评分？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Quality Assurance"
+  difficulty: "medium"
+
+- id: qa_003
+  question: "系统在什么情况下会拒绝回答？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Quality Assurance"
+  difficulty: "medium"
+
+# ===========================================
+# Category: Edge Cases
+# ===========================================
+
+- id: edge_001
+  question: "如果检索不到相关内容会怎样？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Edge Cases"
+  difficulty: "easy"
+
+- id: edge_002
+  question: "如何处理用户输入的敏感信息？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Edge Cases"
+  difficulty: "medium"
+
+- id: edge_003
+  question: "多轮对话如何保持上下文？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Edge Cases"
+  difficulty: "medium"
+
+# ===========================================
+# Category: Deployment & Operations
+# ===========================================
+
+- id: ops_001
+  question: "如何使用 Docker 部署系统？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Deployment"
+  difficulty: "medium"
+
+- id: ops_002
+  question: "系统需要哪些环境变量配置？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Deployment"
+  difficulty: "easy"
+
+- id: ops_003
+  question: "如何监控系统的检索性能？"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Deployment"
+  difficulty: "medium"

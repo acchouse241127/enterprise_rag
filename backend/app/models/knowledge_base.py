@@ -3,11 +3,11 @@ Knowledge base model definition.
 
 Author: C2
 Date: 2026-02-13
-Updated: 2026-02-14 (Phase 2.3 RBAC, Phase 3.2 Folder Sync, Phase 3.3 Chunk Settings)
+Updated: 2026-02-14 (Phase 2.3 RBAC, Phase 3.2 Folder Sync, Phase 3.3 Chunk Settings, V2.0 Retrieval)
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -39,6 +39,14 @@ class KnowledgeBase(Base):
     # Phase 3.3: 分块参数（可调）
     chunk_size: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 覆盖全局默认
     chunk_overlap: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # V2.0: 高级分块与检索配置
+    chunk_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)  # char, sentence, token, chinese_recursive
+    parent_retrieval_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)  # physical, dynamic, off
+    dynamic_expand_n: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 动态扩展的块数
+
+    # V2.0: 按知识库的默认检索策略
+    default_retrieval_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)  # smart, precise, fast, deep
 
     # RBAC: 用户权限关联
     user_permissions: Mapped[list["UserKnowledgeBasePermission"]] = relationship(

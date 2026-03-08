@@ -104,7 +104,8 @@ def run_benchmarks():
     for key, (name, target) in targets.items():
         value = results.get(key)
         status = "PASS" if value else "N/A"
-        print(f"  {name}: {value:.2f}ms if value else 'N/A'} (Target: {target}) [{status}]")
+        value_str = f"{value:.2f}ms" if value else "N/A"
+        print(f"  {name}: {value_str} (Target: {target}) [{status}]")
     
     print("\nBenchmark complete!")
     return results

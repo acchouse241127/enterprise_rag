@@ -30,6 +30,10 @@ from app.core import (
     setup_logging,
     setup_operation_log_file,
 )
+from app.telemetry import (
+    initialize_telemetry,
+    instrument_fastapi,
+)
 from app.core.database import Base, engine, SessionLocal
 from sqlalchemy import text
 from app.models import Document, KnowledgeBase, User, UserKnowledgeBasePermission  # noqa: F401
@@ -161,6 +165,7 @@ def _migrate_v2_chunks_and_kb() -> None:
         "V2.0_005_alter_knowledge_bases.sql",
         "V2.0_004_alter_retrieval_feedbacks.sql",  # B2: feedback rating/reason
         "V2.0_006_alter_retrieval_logs.sql",     # B2: quality metrics + refusal
+        "V2.0_009_add_kb_default_strategy.sql",  # V2.0: KB default retrieval strategy
     ]
     with engine.connect() as conn:
         for name in order:
@@ -182,9 +187,17 @@ def _migrate_v2_chunks_and_kb() -> None:
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
     # Startup
-    setup_logging(level=settings.log_level)
+    setup_logging(level=settings.log_level, json_format=settings.log_json_format)
     setup_operation_log_file()
     Base.metadata.create_all(bind=engine)
+
+    # Initialize distributed tracing (OpenTelemetry)
+    get_operation_logger().info("Initializing OpenTelemetry tracing...")
+    initialize_telemetry()
+    get_operation_logger().info("OpenTelemetry tracing initialized")
+
+    # Instrument FastAPI for distributed tracing
+    instrument_fastapi(app)
     for name, migrate in [
         ("users.role", _migrate_users_role_column),
         ("knowledge_bases.chunk_*", _migrate_knowledge_bases_chunk_columns),
@@ -196,6 +209,26 @@ async def lifespan(app: FastAPI):
             migrate()
         except Exception as e:
             get_operation_logger().warning("migrate %s skipped: %s", name, e)
+
+    # 预热嵌入模型：在后台线程中加载，避免阻塞启动
+    import threading
+    def _warmup_embedding_model():
+        try:
+            get_operation_logger().info("开始预热嵌入模型: %s", settings.embedding_model_name)
+            from app.rag import BgeM3EmbeddingService
+            service = BgeM3EmbeddingService(
+                model_name=settings.embedding_model_name,
+                fallback_dim=settings.embedding_fallback_dim,
+            )
+            # 用一个简单的文本触发模型加载
+            service.embed(["预热模型"])
+            get_operation_logger().info("嵌入模型预热完成")
+        except Exception as e:
+            get_operation_logger().warning("嵌入模型预热失败（将使用 fallback）: %s", e)
+
+    warmup_thread = threading.Thread(target=_warmup_embedding_model, daemon=True)
+    warmup_thread.start()
+
     yield
     # Shutdown (cleanup if needed)
 
@@ -209,6 +242,25 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan,
     )
+
+    # Security headers middleware
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        # Content Security Policy
+        csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
+        response.headers["Content-Security-Policy"] = csp
+        # X-Frame-Options
+        response.headers["X-Frame-Options"] = "DENY"
+        # X-Content-Type-Options
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        # X-XSS-Protection
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # Referrer-Policy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Permissions-Policy
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
 
     # CORS：SPA 跨域（allow_origins 可配置，默认含 http://localhost:3000）
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]

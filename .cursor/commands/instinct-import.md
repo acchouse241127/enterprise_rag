@@ -1,12 +1,13 @@
 ---
 name: instinct-import
 description: Import instincts from teammates, Skill Creator, or other sources
+description_zh: 从队友、Skill Creator 或其他来源导入本能
 command: true
 ---
 
-# Instinct Import Command
+# Instinct Import Command / 本能导入命令
 
-## Implementation
+## Implementation / 实现
 
 Run the instinct CLI using the plugin root path:
 
@@ -26,7 +27,7 @@ Import instincts from:
 - Community collections
 - Previous machine backups
 
-## Usage
+## Usage / 用法
 
 ```
 /instinct-import team-instincts.yaml
@@ -34,7 +35,7 @@ Import instincts from:
 /instinct-import --from-skill-creator acme/webapp
 ```
 
-## What to Do
+## What to Do / 操作步骤
 
 1. Fetch the instinct file (local path or URL)
 2. Parse and validate the format
@@ -42,7 +43,7 @@ Import instincts from:
 4. Merge or add new instincts
 5. Save to `~/.claude/homunculus/instincts/inherited/`
 
-## Import Process
+## Import Process / 导入流程
 
 ```
 📥 Importing instincts from: team-instincts.yaml
@@ -81,7 +82,7 @@ These contradict local instincts:
 Import 8 new, update 1, skip 3?
 ```
 
-## Merge Strategies
+## Merge Strategies / 合并策略
 
 ### For Duplicates
 When importing an instinct that matches an existing one:
@@ -95,7 +96,7 @@ When importing an instinct that contradicts an existing one:
 - **Flag for review**: Mark both as needing attention
 - **Manual resolution**: User decides which to keep
 
-## Source Tracking
+## Source Tracking / 来源追踪
 
 Imported instincts are marked with:
 ```yaml
@@ -105,7 +106,7 @@ imported_at: "2025-01-22T10:30:00Z"
 original_source: "session-observation"  # or "repo-analysis"
 ```
 
-## Skill Creator Integration
+## Skill Creator Integration / Skill Creator 集成
 
 When importing from Skill Creator:
 
@@ -118,7 +119,7 @@ This fetches instincts generated from repo analysis:
 - Higher initial confidence (0.7+)
 - Linked to source repository
 
-## Flags
+## Flags / 选项
 
 - `--dry-run`: Preview without importing
 - `--force`: Import even if conflicts exist
@@ -126,7 +127,7 @@ This fetches instincts generated from repo analysis:
 - `--from-skill-creator <owner/repo>`: Import from Skill Creator analysis
 - `--min-confidence <n>`: Only import instincts above threshold
 
-## Output
+## Output / 输出
 
 After import:
 ```

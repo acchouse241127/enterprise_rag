@@ -1,12 +1,12 @@
 """API dependency providers."""
 
 from collections.abc import Generator
-from functools import wraps
 from typing import Annotated, Callable
 
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.database import SessionLocal
 from app.core.security import decode_token
 from app.models.user import RoleEnum, User
@@ -147,4 +147,67 @@ def get_editor_user(
             detail="权限不足：需要编辑者或管理员权限",
         )
     return current_user
+
+
+# ========== Service Layer Dependencies (Repository Pattern) ==========
+
+import functools
+
+
+@functools.cache
+def get_conversation_store():
+    """Get or create the singleton conversation store."""
+    from app.services.conversation_store import create_conversation_store
+    return create_conversation_store()
+
+
+@functools.cache
+def get_qa_service():
+    """Get or create the singleton QaService instance.
+    
+    This factory creates a QaService with all dependencies injected,
+    following the Repository Pattern for better testability and maintainability.
+    """
+    from app.rag import (
+        BgeM3EmbeddingService,
+        BgeRerankerService,
+        ChromaVectorStore,
+        RagPipeline,
+        VectorRetriever,
+    )
+    from app.rag.keyword_retriever import KeywordRetriever
+    from app.services.qa_service import QaService
+
+    # Create dependencies
+    embedding_service = BgeM3EmbeddingService(
+        model_name=settings.embedding_model_name,
+        fallback_dim=settings.embedding_fallback_dim,
+    )
+    vector_store = ChromaVectorStore(
+        host=settings.chroma_host,
+        port=settings.chroma_port,
+        collection_prefix=settings.chroma_collection_prefix,
+    )
+    retriever = VectorRetriever(embedding_service, vector_store)
+    keyword_retriever = KeywordRetriever(embedding_service, vector_store)
+    reranker = BgeRerankerService(model_name=settings.reranker_model_name)
+    pipeline = RagPipeline(retriever, embedding_service)
+    conversation_store = get_conversation_store()
+
+    return QaService(
+        retriever=retriever,
+        embedding_service=embedding_service,
+        vector_store=vector_store,
+        reranker=reranker,
+        pipeline=pipeline,
+        keyword_retriever=keyword_retriever,
+        conversation_store=conversation_store,
+    )
+
+
+@functools.cache
+def get_document_service():
+    """Get or create the singleton DocumentService instance."""
+    from app.services.document_service import DocumentService
+    return DocumentService()
 

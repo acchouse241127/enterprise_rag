@@ -1,14 +1,15 @@
 ---
 name: skill-create
 description: Analyze local git history to extract coding patterns and generate SKILL.md files. Local version of the Skill Creator GitHub App.
+description_zh: 分析本地 git 历史以提取编码模式并生成 SKILL.md 文件。Skill Creator GitHub App 的本地版本。
 allowed_tools: ["Bash", "Read", "Write", "Grep", "Glob"]
 ---
 
-# /skill-create - Local Skill Generation
+# /skill-create - Local Skill Generation / 本地技能生成
 
 Analyze your repository's git history to extract coding patterns and generate SKILL.md files that teach Claude your team's practices.
 
-## Usage
+## Usage / 用法
 
 ```bash
 /skill-create                    # Analyze current repo
@@ -17,16 +18,16 @@ Analyze your repository's git history to extract coding patterns and generate SK
 /skill-create --instincts        # Also generate instincts for continuous-learning-v2
 ```
 
-## What It Does
+## What It Does / 功能说明
 
 1. **Parses Git History** - Analyzes commits, file changes, and patterns
 2. **Detects Patterns** - Identifies recurring workflows and conventions
 3. **Generates SKILL.md** - Creates valid Claude Code skill files
 4. **Optionally Creates Instincts** - For the continuous-learning-v2 system
 
-## Analysis Steps
+## Analysis Steps / 分析步骤
 
-### Step 1: Gather Git Data
+### Step 1: Gather Git Data / 步骤 1：收集 Git 数据
 
 ```bash
 # Get recent commits with file changes
@@ -39,7 +40,7 @@ git log --oneline -n 200 --name-only | grep -v "^$" | grep -v "^[a-f0-9]" | sort
 git log --oneline -n 200 | cut -d' ' -f2- | head -50
 ```
 
-### Step 2: Detect Patterns
+### Step 2: Detect Patterns / 步骤 2：检测模式
 
 Look for these pattern types:
 
@@ -51,7 +52,7 @@ Look for these pattern types:
 | **Architecture** | Folder structure and naming conventions |
 | **Testing patterns** | Test file locations, naming, coverage |
 
-### Step 3: Generate SKILL.md
+### Step 3: Generate SKILL.md / 步骤 3：生成 SKILL.md
 
 Output format:
 
@@ -79,7 +80,7 @@ analyzed_commits: {count}
 {detected test conventions}
 ```
 
-### Step 4: Generate Instincts (if --instincts)
+### Step 4: Generate Instincts (if --instincts) / 步骤 4：生成本能（若使用 --instincts）
 
 For continuous-learning-v2 integration:
 
@@ -102,7 +103,7 @@ Prefix commits with: feat:, fix:, chore:, docs:, test:, refactor:
 - {percentage}% follow conventional commit format
 ```
 
-## Example Output
+## Example Output / 示例输出
 
 Running `/skill-create` on a TypeScript project might produce:
 
@@ -155,7 +156,7 @@ src/
 - Framework: Vitest
 ```
 
-## GitHub App Integration
+## GitHub App Integration / GitHub App 集成
 
 For advanced features (10k+ commits, team sharing, auto-PRs), use the [Skill Creator GitHub App](https://github.com/apps/skill-creator):
 
@@ -163,7 +164,7 @@ For advanced features (10k+ commits, team sharing, auto-PRs), use the [Skill Cre
 - Comment `/skill-creator analyze` on any issue
 - Receives PR with generated skills
 
-## Related Commands
+## Related Commands / 相关命令
 
 - `/instinct-import` - Import generated instincts
 - `/instinct-status` - View learned instincts

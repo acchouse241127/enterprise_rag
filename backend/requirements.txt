@@ -1,10 +1,11 @@
 fastapi
 uvicorn[standard]
 pydantic-settings
+docker>=7.0.0
 sqlalchemy
 psycopg2-binary
 python-jose[cryptography]
-bcrypt<4.1
+bcrypt==4.1
 passlib[bcrypt]
 pyotp
 python-multipart
@@ -15,7 +16,6 @@ paddleocr
 easyocr
 python-docx
 openpyxl
-python-pptx
 chromadb
 sentence-transformers
 tiktoken
@@ -26,6 +26,7 @@ pytest-cov
 # Phase 3.3
 prometheus_client
 reportlab
+jieba
 
 # Queue and worker (reshaping)
 redis
@@ -37,3 +38,14 @@ pydub
 requests
 readability-lxml
 
+# V2.1 Phase 2: Docling PDF parsing
+docling
+
+# OpenTelemetry distributed tracing
+opentelemetry-api>=1.24.0
+opentelemetry-sdk>=1.24.0
+opentelemetry-instrumentation-fastapi>=0.48b0
+opentelemetry-instrumentation-httpx>=0.48b0
+opentelemetry-instrumentation-sqlalchemy>=0.48b0
+opentelemetry-instrumentation-redis>=0.48b0
+opentelemetry-exporter-otlp>=1.25.0

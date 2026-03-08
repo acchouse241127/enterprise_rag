@@ -1,9 +1,10 @@
 ---
 name: django-verification
 description: "Verification loop for Django projects: migrations, linting, tests with coverage, security scans, and deployment readiness checks before release or PR."
+description_zh: Django 项目验证循环：迁移、lint、带覆盖的测试、安全扫描及发布或 PR 前部署就绪检查。
 ---
 
-# Django Verification Loop
+# Django Verification Loop / Django 验证循环
 
 Run before PRs, after major changes, and pre-deploy to ensure Django application quality and security.
 

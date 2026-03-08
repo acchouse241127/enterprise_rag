@@ -24,14 +24,23 @@ class NLIHallucinationDetector:
     """基于 NLI 模型的幻觉检测器。
 
     使用 cross-encoder/nli-deberta-v3-base 模型，约 700MB，GPU 显存 ~1GB。
+    支持自动检测 CUDA 可用性，回退到 CPU 模式。
     """
 
     MODEL_NAME = "cross-encoder/nli-deberta-v3-base"
     LABELS = ["contradiction", "entailment", "neutral"]
 
-    def __init__(self, device: str = "cuda") -> None:
-        self.device = device
-        self.model = CrossEncoder(self.MODEL_NAME, device=device)
+    def __init__(self, device: str = "auto") -> None:
+        # 自动检测 CUDA 可用性
+        if device == "auto":
+            try:
+                import torch
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            except Exception:
+                self.device = "cpu"
+        else:
+            self.device = device
+        self.model = CrossEncoder(self.MODEL_NAME, device=self.device)
 
     def detect(self, answer: str, context: str) -> HallucinationResult:
         """检测答案相对于上下文的忠实度.

@@ -1,11 +1,12 @@
 ---
 name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
+description_zh: 在实现任何功能或修复 bug 前、在编写实现代码前使用
 ---
 
-# Test-Driven Development (TDD)
+# Test-Driven Development (TDD) / 测试驱动开发 (TDD)
 
-## Overview
+## Overview / 概述
 
 Write the test first. Watch it fail. Write minimal code to pass.
 
@@ -13,7 +14,7 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 **Violating the letter of the rules is violating the spirit of the rules.**
 
-## When to Use
+## When to Use / 使用时机
 
 **Always:**
 - New features
@@ -28,7 +29,7 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 Thinking "skip TDD just this once"? Stop. That's rationalization.
 
-## The Iron Law
+## The Iron Law / 铁律
 
 ```
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
@@ -44,7 +45,7 @@ Write code before the test? Delete it. Start over.
 
 Implement fresh from tests. Period.
 
-## Red-Green-Refactor
+## Red-Green-Refactor / 红-绿-重构
 
 ```dot
 digraph tdd_cycle {

@@ -1,23 +1,23 @@
-# Workflow - Multi-Model Collaborative Development
+# Workflow - Multi-Model Collaborative Development / 工作流 - 多模型协作开发
 
 Multi-model collaborative development workflow (Research → Ideation → Plan → Execute → Optimize → Review), with intelligent routing: Frontend → Gemini, Backend → Codex.
 
 Structured development workflow with quality gates, MCP services, and multi-model collaboration.
 
-## Usage
+## Usage / 用法
 
 ```bash
 /workflow <task description>
 ```
 
-## Context
+## Context / 上下文
 
 - Task to develop: $ARGUMENTS
 - Structured 6-phase workflow with quality gates
 - Multi-model collaboration: Codex (backend) + Gemini (frontend) + Claude (orchestration)
 - MCP service integration (ace-tool) for enhanced capabilities
 
-## Your Role
+## Your Role / 你的角色
 
 You are the **Orchestrator**, coordinating a multi-model collaborative system (Research → Ideation → Plan → Execute → Optimize → Review). Communicate concisely and professionally for experienced developers.
 
@@ -29,7 +29,7 @@ You are the **Orchestrator**, coordinating a multi-model collaborative system (R
 
 ---
 
-## Multi-Model Call Specification
+## Multi-Model Call Specification / 多模型调用规范
 
 **Call syntax** (parallel: `run_in_background: true`, sequential: `false`):
 
@@ -93,7 +93,7 @@ TaskOutput({ task_id: "<task_id>", block: true, timeout: 600000 })
 
 ---
 
-## Communication Guidelines
+## Communication Guidelines / 沟通指南
 
 1. Start responses with mode label `[Mode: X]`, initial is `[Mode: Research]`.
 2. Follow strict sequence: `Research → Ideation → Plan → Execute → Optimize → Review`.
@@ -103,7 +103,7 @@ TaskOutput({ task_id: "<task_id>", block: true, timeout: 600000 })
 
 ---
 
-## Execution Workflow
+## Execution Workflow / 执行工作流
 
 **Task Description**: $ARGUMENTS
 
@@ -176,7 +176,7 @@ Wait for results with `TaskOutput`. Integrate review feedback, execute optimizat
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. Phase sequence cannot be skipped (unless user explicitly instructs)
 2. External models have **zero filesystem write access**, all modifications by Claude

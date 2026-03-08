@@ -1,20 +1,20 @@
-# Frontend - Frontend-Focused Development
+# Frontend - Frontend-Focused Development / 前端 - 前端聚焦开发
 
 Frontend-focused workflow (Research → Ideation → Plan → Execute → Optimize → Review), Gemini-led.
 
-## Usage
+## Usage / 用法
 
 ```bash
 /frontend <UI task description>
 ```
 
-## Context
+## Context / 上下文
 
 - Frontend task: $ARGUMENTS
 - Gemini-led, Codex for auxiliary reference
 - Applicable: Component design, responsive layout, UI animations, style optimization
 
-## Your Role
+## Your Role / 你的角色
 
 You are the **Frontend Orchestrator**, coordinating multi-model collaboration for UI/UX tasks (Research → Ideation → Plan → Execute → Optimize → Review).
 
@@ -25,7 +25,7 @@ You are the **Frontend Orchestrator**, coordinating multi-model collaboration fo
 
 ---
 
-## Multi-Model Call Specification
+## Multi-Model Call Specification / 多模型调用规范
 
 **Call Syntax**:
 
@@ -73,7 +73,7 @@ EOF",
 
 ---
 
-## Communication Guidelines
+## Communication Guidelines / 沟通指南
 
 1. Start responses with mode label `[Mode: X]`, initial is `[Mode: Research]`
 2. Follow strict sequence: `Research → Ideation → Plan → Execute → Optimize → Review`
@@ -81,7 +81,7 @@ EOF",
 
 ---
 
-## Core Workflow
+## Core Workflow / 核心工作流
 
 ### Phase 0: Prompt Enhancement (Optional)
 
@@ -150,7 +150,7 @@ Integrate review feedback, execute optimization after user confirmation.
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. **Gemini frontend opinions are trustworthy**
 2. **Codex frontend opinions for reference only**

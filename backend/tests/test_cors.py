@@ -1,6 +1,5 @@
 """CORS middleware tests for SPA cross-origin requests."""
 
-import pytest
 from fastapi.testclient import TestClient
 
 

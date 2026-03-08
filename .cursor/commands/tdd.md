@@ -1,12 +1,13 @@
 ---
 description: Enforce test-driven development workflow. Scaffold interfaces, generate tests FIRST, then implement minimal code to pass. Ensure 80%+ coverage.
+description_zh: 强制执行测试驱动开发工作流。先搭建接口、生成测试，再实现最小代码使测试通过。确保 80%+ 覆盖率。
 ---
 
-# TDD Command
+# TDD Command / TDD 命令
 
 This command invokes the **tdd-guide** agent to enforce test-driven development methodology.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Scaffold Interfaces** - Define types/interfaces first
 2. **Generate Tests First** - Write failing tests (RED)
@@ -14,7 +15,7 @@ This command invokes the **tdd-guide** agent to enforce test-driven development 
 4. **Refactor** - Improve code while keeping tests green (REFACTOR)
 5. **Verify Coverage** - Ensure 80%+ test coverage
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/tdd` when:
 - Implementing new features
@@ -23,7 +24,7 @@ Use `/tdd` when:
 - Refactoring existing code
 - Building critical business logic
 
-## How It Works
+## How It Works / 工作方式
 
 The tdd-guide agent will:
 
@@ -35,7 +36,7 @@ The tdd-guide agent will:
 6. **Refactor** code while keeping tests green
 7. **Check coverage** and add more tests if below 80%
 
-## TDD Cycle
+## TDD Cycle / TDD 周期
 
 ```
 RED → GREEN → REFACTOR → REPEAT
@@ -46,7 +47,7 @@ REFACTOR: Improve code, keep tests passing
 REPEAT:   Next feature/scenario
 ```
 
-## Example Usage
+## Example Usage / 示例用法
 
 ```
 User: /tdd I need a function to calculate market liquidity score
@@ -253,7 +254,7 @@ Coverage: 100% ✅ (Target: 80%)
 ✅ TDD session complete!
 ```
 
-## TDD Best Practices
+## TDD Best Practices / TDD 最佳实践
 
 **DO:**
 - ✅ Write the test FIRST, before any implementation
@@ -271,7 +272,7 @@ Coverage: 100% ✅ (Target: 80%)
 - ❌ Test implementation details (test behavior)
 - ❌ Mock everything (prefer integration tests)
 
-## Test Types to Include
+## Test Types to Include / 需包含的测试类型
 
 **Unit Tests** (Function-level):
 - Happy path scenarios
@@ -290,7 +291,7 @@ Coverage: 100% ✅ (Target: 80%)
 - Multi-step processes
 - Full stack integration
 
-## Coverage Requirements
+## Coverage Requirements / 覆盖率要求
 
 - **80% minimum** for all code
 - **100% required** for:
@@ -299,7 +300,7 @@ Coverage: 100% ✅ (Target: 80%)
   - Security-critical code
   - Core business logic
 
-## Important Notes
+## Important Notes / 重要说明
 
 **MANDATORY**: Tests must be written BEFORE implementation. The TDD cycle is:
 
@@ -309,7 +310,7 @@ Coverage: 100% ✅ (Target: 80%)
 
 Never skip the RED phase. Never write code before tests.
 
-## Integration with Other Commands
+## Integration with Other Commands / 与其他命令的集成
 
 - Use `/plan` first to understand what to build
 - Use `/tdd` to implement with tests
@@ -317,7 +318,7 @@ Never skip the RED phase. Never write code before tests.
 - Use `/code-review` to review implementation
 - Use `/test-coverage` to verify coverage
 
-## Related Agents
+## Related Agents / 相关代理
 
 This command invokes the `tdd-guide` agent located at:
 `~/.claude/agents/tdd-guide.md`

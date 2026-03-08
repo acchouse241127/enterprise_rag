@@ -1,22 +1,23 @@
 ---
 name: observer
 description: Background agent that analyzes session observations to detect patterns and create instincts. Uses Haiku for cost-efficiency.
+description_zh: 后台代理，分析会话观察以检测模式并创建本能。使用 Haiku 以提高成本效益。
 model: haiku
 run_mode: background
 ---
 
-# Observer Agent
+# Observer Agent / 观察者代理
 
 A background agent that analyzes observations from Claude Code sessions to detect patterns and create instincts.
 
-## When to Run
+## When to Run / 运行时机
 
 - After significant session activity (20+ tool calls)
 - When user runs `/analyze-patterns`
 - On a scheduled interval (configurable, default 5 minutes)
 - When triggered by observation hook (SIGUSR1)
 
-## Input
+## Input / 输入
 
 Reads observations from `~/.claude/homunculus/observations.jsonl`:
 
@@ -27,7 +28,7 @@ Reads observations from `~/.claude/homunculus/observations.jsonl`:
 {"timestamp":"2025-01-22T10:30:10Z","event":"tool_complete","session":"abc123","tool":"Bash","output":"All tests pass"}
 ```
 
-## Pattern Detection
+## Pattern Detection / 模式检测
 
 Look for these patterns in observations:
 

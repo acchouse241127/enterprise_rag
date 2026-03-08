@@ -84,6 +84,80 @@ class QaService:
                 return None
         return cls._verify_pipeline
 
+    # V2.1 Phase 4: 增强检索服务（延迟初始化）
+    _enhanced_retrieval: EnhancedRetrievalService | None = None
+
+    @classmethod
+    def _get_enhanced_retrieval(cls) -> EnhancedRetrievalService | None:
+        """获取增强检索服务（延迟初始化）。"""
+        if cls._enhanced_retrieval is None:
+            try:
+                cls._enhanced_retrieval = EnhancedRetrievalService()
+                logger.info("EnhancedRetrievalService initialized")
+            except Exception as e:
+                logger.warning("Failed to initialize EnhancedRetrievalService: %s", e)
+                return None
+        return cls._enhanced_retrieval
+
+    @staticmethod
+    def _retrieve_with_enhanced(
+        knowledge_base_id: int,
+        question: str,
+        top_k: int,
+    ) -> tuple[list[dict], dict]:
+        """使用增强检索服务进行多模态感知检索。
+
+        Args:
+            knowledge_base_id: 知识库ID
+            question: 查询问题
+            top_k: 返回结果数量
+
+        Returns:
+            (检索结果列表, 元数据字典)
+        """
+        service = QaService._get_enhanced_retrieval()
+        if service is None:
+            logger.warning("EnhancedRetrievalService not available, using vector retrieval")
+            # Fallback to basic retrieval
+            chunks, err = QaService._retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=question,
+                top_k=top_k,
+            )
+            if err is not None:
+                return [], {"error": str(err)}
+            return chunks, {}
+
+        try:
+            # 使用增强检索服务进行多模态感知检索
+            enhanced_chunks, metadata = service.retrieve_with_modality_aware(
+                query=question,
+                knowledge_base_id=knowledge_base_id,
+                top_k=top_k,
+            )
+
+            logger.info(
+                "Enhanced retrieval retrieved %d chunks with modality boost (needs_chart=%s, needs_table=%s, needs_image=%s)",
+                len(enhanced_chunks),
+                metadata.get("needs_chart", False),
+                metadata.get("needs_table", False),
+                metadata.get("needs_image", False),
+            )
+
+            return enhanced_chunks, metadata
+
+        except Exception as e:
+            logger.error("Enhanced retrieval failed: %s", e)
+            # Fallback to basic retrieval
+            chunks, err = QaService._retriever.retrieve(
+                knowledge_base_id=knowledge_base_id,
+                query=question,
+                top_k=top_k,
+            )
+            if err is not None:
+                return [], {"error": str(err)}
+            return chunks, {}
+
     @staticmethod
     def _filter_by_similarity(chunks: list[dict]) -> list[dict]:
         """过滤掉相似度过低的片段（Chroma cosine 距离过大即无关）。"""
@@ -363,6 +437,7 @@ class QaService:
         query_expansion_mode: ExpansionMode | None = None,
         query_expansion_target: str | None = None,
         query_expansion_llm: dict[str, Any] | None = None,
+        retrieval_mode: str | None = None,  # P0: Override strategy retrieval_mode
     ) -> tuple[dict[str, Any] | None, str | None]:
         start_time = time.perf_counter()
 
@@ -375,47 +450,57 @@ class QaService:
         use_expansion = strat.expansion_enabled and settings.retrieval_query_expansion_enabled
         use_keyword = strat.keyword_enabled and settings.retrieval_use_keyword
 
-        retrieval_start = time.perf_counter()
-        queries = [question]
-        if use_expansion:
-            expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
-                query_expansion_mode=query_expansion_mode,
-                query_expansion_target=query_expansion_target,
-                query_expansion_llm=query_expansion_llm,
-            )
-            queries = expand_query(
-                question,
-                mode=expansion_mode,
-                llm_provider=expansion_llm,
-                max_extra=2
-            ) or [question]
-        seen_ids = set()
-        chunks = []
-        for q in queries:
-            vec_chunks, err = QaService._retriever.retrieve(
+        # V2.1 Phase 4: Enhanced strategy uses modality-aware retrieval
+        enhancement_metadata = {}
+        if strategy == "enhanced":
+            chunks, enhancement_metadata = QaService._retrieve_with_enhanced(
                 knowledge_base_id=knowledge_base_id,
-                query=q,
-                top_k=retrieve_top_k,
+                question=question,
+                top_k=final_top_k,
             )
-            if err is not None:
-                return None, err
-            for c in vec_chunks:
-                cid = c.get("chunk_id")
-                if cid and cid not in seen_ids:
-                    seen_ids.add(cid)
-                    chunks.append(c)
-        if use_keyword:
-            kw_chunks, _ = QaService._keyword_retriever.retrieve(
-                knowledge_base_id=knowledge_base_id,
-                query=question,
-                top_k=retrieve_top_k,
-            )
-            for c in kw_chunks:
-                cid = c.get("chunk_id")
-                if cid and cid not in seen_ids:
-                    seen_ids.add(cid)
-                    chunks.append(c)
-        retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
+            retrieval_time_ms = enhancement_metadata.get("retrieval_time_ms", 0)
+        else:
+            retrieval_start = time.perf_counter()
+            queries = [question]
+            if use_expansion:
+                expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
+                    query_expansion_mode=query_expansion_mode,
+                    query_expansion_target=query_expansion_target,
+                    query_expansion_llm=query_expansion_llm,
+                )
+                queries = expand_query(
+                    question,
+                    mode=expansion_mode,
+                    llm_provider=expansion_llm,
+                    max_extra=2
+                ) or [question]
+            seen_ids = set()
+            chunks = []
+            for q in queries:
+                vec_chunks, err = QaService._retriever.retrieve(
+                    knowledge_base_id=knowledge_base_id,
+                    query=q,
+                    top_k=retrieve_top_k,
+                )
+                if err is not None:
+                    return None, err
+                for c in vec_chunks:
+                    cid = c.get("chunk_id")
+                    if cid and cid not in seen_ids:
+                        seen_ids.add(cid)
+                        chunks.append(c)
+            if use_keyword:
+                kw_chunks, _ = QaService._keyword_retriever.retrieve(
+                    knowledge_base_id=knowledge_base_id,
+                    query=question,
+                    top_k=retrieve_top_k,
+                )
+                for c in kw_chunks:
+                    cid = c.get("chunk_id")
+                    if cid and cid not in seen_ids:
+                        seen_ids.add(cid)
+                        chunks.append(c)
+            retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
 
         chunks_retrieved = len(chunks)
 
@@ -611,6 +696,7 @@ class QaService:
         query_expansion_mode: ExpansionMode | None = None,
         query_expansion_target: str | None = None,
         query_expansion_llm: dict[str, Any] | None = None,
+        retrieval_mode: str | None = None,  # P0: Override strategy retrieval_mode
     ) -> Iterator[str]:
         start_time = time.perf_counter()
 
@@ -623,48 +709,58 @@ class QaService:
         use_expansion = strat.expansion_enabled and settings.retrieval_query_expansion_enabled
         use_keyword = strat.keyword_enabled and settings.retrieval_use_keyword
 
-        retrieval_start = time.perf_counter()
-        queries = [question]
-        if use_expansion:
-            expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
-                query_expansion_mode=query_expansion_mode,
-                query_expansion_target=query_expansion_target,
-                query_expansion_llm=query_expansion_llm,
-            )
-            queries = expand_query(
-                question,
-                mode=expansion_mode,
-                llm_provider=expansion_llm,
-                max_extra=2
-            ) or [question]
-        seen_ids = set()
-        chunks = []
-        for q in queries:
-            vec_chunks, err = QaService._retriever.retrieve(
+        # V2.1 Phase 4: Enhanced strategy uses modality-aware retrieval
+        enhancement_metadata = {}
+        if strategy == "enhanced":
+            chunks, enhancement_metadata = QaService._retrieve_with_enhanced(
                 knowledge_base_id=knowledge_base_id,
-                query=q,
-                top_k=retrieve_top_k,
+                question=question,
+                top_k=final_top_k,
             )
-            if err is not None:
-                yield f"data: {json.dumps({'type': 'error', 'message': err}, ensure_ascii=False)}\n\n"
-                return
-            for c in vec_chunks:
-                cid = c.get("chunk_id")
-                if cid and cid not in seen_ids:
-                    seen_ids.add(cid)
-                    chunks.append(c)
-        if use_keyword:
-            kw_chunks, _ = QaService._keyword_retriever.retrieve(
-                knowledge_base_id=knowledge_base_id,
-                query=question,
-                top_k=retrieve_top_k,
-            )
-            for c in kw_chunks:
-                cid = c.get("chunk_id")
-                if cid and cid not in seen_ids:
-                    seen_ids.add(cid)
-                    chunks.append(c)
-        retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
+            retrieval_time_ms = enhancement_metadata.get("retrieval_time_ms", 0)
+        else:
+                    retrieval_start = time.perf_counter()
+                    queries = [question]
+                    if use_expansion:
+                        expansion_mode, expansion_llm = QaService._resolve_query_expansion_config(
+                            query_expansion_mode=query_expansion_mode,
+                            query_expansion_target=query_expansion_target,
+                            query_expansion_llm=query_expansion_llm,
+                        )
+                        queries = expand_query(
+                            question,
+                            mode=expansion_mode,
+                            llm_provider=expansion_llm,
+                            max_extra=2
+                        ) or [question]
+                    seen_ids = set()
+                    chunks = []
+                    for q in queries:
+                        vec_chunks, err = QaService._retriever.retrieve(
+                            knowledge_base_id=knowledge_base_id,
+                            query=q,
+                            top_k=retrieve_top_k,
+                        )
+                        if err is not None:
+                            yield f"data: {json.dumps({'type': 'error', 'message': err}, ensure_ascii=False)}\n\n"
+                            return
+                        for c in vec_chunks:
+                            cid = c.get("chunk_id")
+                            if cid and cid not in seen_ids:
+                                seen_ids.add(cid)
+                                chunks.append(c)
+                    if use_keyword:
+                        kw_chunks, _ = QaService._keyword_retriever.retrieve(
+                            knowledge_base_id=knowledge_base_id,
+                            query=question,
+                            top_k=retrieve_top_k,
+                        )
+                        for c in kw_chunks:
+                            cid = c.get("chunk_id")
+                            if cid and cid not in seen_ids:
+                                seen_ids.add(cid)
+                                chunks.append(c)
+                    retrieval_time_ms = int((time.perf_counter() - retrieval_start) * 1000)
 
         chunks_retrieved = len(chunks)
         chunks = QaService._filter_by_similarity(chunks)

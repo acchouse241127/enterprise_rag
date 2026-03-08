@@ -25,6 +25,7 @@ class TaskResponse(BaseModel):
     status: str
     entity_type: str | None
     entity_id: int | None
+    filename: str | None = None  # 从 input_data 中提取的文件名
     progress: float
     message: str | None
     error_message: str | None
@@ -34,6 +35,13 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+def _extract_filename(task) -> str | None:
+    """从任务的 input_data 中提取 filename"""
+    if task.input_data and isinstance(task.input_data, dict):
+        return task.input_data.get("filename")
+    return None
 
 
 class TaskListResponse(BaseModel):
@@ -75,6 +83,7 @@ def list_tasks(
                 status=t.status,
                 entity_type=t.entity_type,
                 entity_id=t.entity_id,
+                filename=_extract_filename(t),
                 progress=t.progress,
                 message=t.message,
                 error_message=t.error_message,
@@ -105,6 +114,7 @@ def get_task(
         status=task.status,
         entity_type=task.entity_type,
         entity_id=task.entity_id,
+        filename=_extract_filename(task),
         progress=task.progress,
         message=task.message,
         error_message=task.error_message,

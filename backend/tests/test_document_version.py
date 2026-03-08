@@ -10,7 +10,6 @@ Author: C2
 Date: 2026-02-13
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from sqlalchemy.orm import Session
 
@@ -137,8 +136,8 @@ class TestDocumentVersionService:
         # Verify new version's vectors were created
         mock_vector_store.upsert_document_chunks.assert_called_once()
         # Verify is_current flags were updated
-        assert mock_current.is_current == False
-        assert mock_target.is_current == True
+        assert not mock_current.is_current
+        assert mock_target.is_current
         # Verify commit was called
         mock_db.commit.assert_called()
 
@@ -218,7 +217,7 @@ class TestDocumentVersionAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["code"] == 0
-        assert data["data"]["is_current"] == True
+        assert data["data"]["is_current"] is True
 
     def test_activate_version_api_error(self, client, auth_headers):
         """Test POST /documents/{id}/activate returns error on failure."""

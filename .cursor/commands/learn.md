@@ -1,12 +1,12 @@
-# /learn - Extract Reusable Patterns
+# /learn - Extract Reusable Patterns / 提取可复用模式
 
 Analyze the current session and extract any patterns worth saving as skills.
 
-## Trigger
+## Trigger / 触发
 
 Run `/learn` at any point during a session when you've solved a non-trivial problem.
 
-## What to Extract
+## What to Extract / 提取内容
 
 Look for:
 
@@ -31,7 +31,7 @@ Look for:
    - Architecture decisions made
    - Integration patterns
 
-## Output Format
+## Output Format / 输出格式
 
 Create a skill file at `~/.claude/skills/learned/[pattern-name].md`:
 
@@ -54,7 +54,7 @@ Create a skill file at `~/.claude/skills/learned/[pattern-name].md`:
 [Trigger conditions - what should activate this skill]
 ```
 
-## Process
+## Process / 流程
 
 1. Review the session for extractable patterns
 2. Identify the most valuable/reusable insight
@@ -62,7 +62,7 @@ Create a skill file at `~/.claude/skills/learned/[pattern-name].md`:
 4. Ask user to confirm before saving
 5. Save to `~/.claude/skills/learned/`
 
-## Notes
+## Notes / 说明
 
 - Don't extract trivial fixes (typos, simple syntax errors)
 - Don't extract one-time issues (specific API outages, etc.)

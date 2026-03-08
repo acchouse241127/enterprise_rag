@@ -1,17 +1,18 @@
 ---
 name: instinct-export
 description: Export instincts for sharing with teammates or other projects
+description_zh: 导出本能以与队友或其他项目共享
 command: /instinct-export
 ---
 
-# Instinct Export Command
+# Instinct Export Command / 本能导出命令
 
 Exports instincts to a shareable format. Perfect for:
 - Sharing with teammates
 - Transferring to a new machine
 - Contributing to project conventions
 
-## Usage
+## Usage / 用法
 
 ```
 /instinct-export                           # Export all personal instincts
@@ -20,7 +21,7 @@ Exports instincts to a shareable format. Perfect for:
 /instinct-export --output team-instincts.yaml
 ```
 
-## What to Do
+## What to Do / 操作步骤
 
 1. Read instincts from `~/.claude/homunculus/instincts/personal/`
 2. Filter based on flags
@@ -30,7 +31,7 @@ Exports instincts to a shareable format. Perfect for:
    - Remove timestamps older than "last week"
 4. Generate export file
 
-## Output Format
+## Output Format / 输出格式
 
 Creates a YAML file:
 
@@ -67,7 +68,7 @@ instincts:
     observations: 6
 ```
 
-## Privacy Considerations
+## Privacy Considerations / 隐私考虑
 
 Exports include:
 - ✅ Trigger patterns
@@ -82,7 +83,7 @@ Exports do NOT include:
 - ❌ Session transcripts
 - ❌ Personal identifiers
 
-## Flags
+## Flags / 选项
 
 - `--domain <name>`: Export only specified domain
 - `--min-confidence <n>`: Minimum confidence threshold (default: 0.3)

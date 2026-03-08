@@ -1,17 +1,20 @@
 ---
 name: dispatching-parallel-agents
 description: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
+description_zh: 当面临 2 个及以上可独立推进、无共享状态或顺序依赖的任务时使用
 ---
 
-# Dispatching Parallel Agents
+# Dispatching Parallel Agents / 派遣并行代理
 
-## Overview
+## Overview / 概述
 
 When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel.
+当存在多个无关失败（不同测试文件、不同子系统、不同 bug）时，按序调查会浪费时间。每项调查独立，可并行进行。
 
 **Core principle:** Dispatch one agent per independent problem domain. Let them work concurrently.
+**核心原则：** 每个独立问题域派遣一个代理。让它们并发工作。
 
-## When to Use
+## When to Use / 使用时机
 
 ```dot
 digraph when_to_use {
@@ -31,31 +34,44 @@ digraph when_to_use {
 }
 ```
 
-**Use when:**
+**Use when: / 适用场景：**
 - 3+ test files failing with different root causes
+  3+ 个测试文件因不同根因失败
 - Multiple subsystems broken independently
+  多个子系统各自损坏
 - Each problem can be understood without context from others
+  各问题可在无其他上下文的情况下理解
 - No shared state between investigations
+  调查之间无共享状态
 
-**Don't use when:**
+**Don't use when: / 不适用场景：**
 - Failures are related (fix one might fix others)
+  失败相关（修一个可能顺带修好其他）
 - Need to understand full system state
+  需要理解完整系统状态
 - Agents would interfere with each other
+  代理会互相干扰
 
-## The Pattern
+## The Pattern / 模式
 
-### 1. Identify Independent Domains
+### 1. Identify Independent Domains / 识别独立域
 
 Group failures by what's broken:
+按故障分组：
 - File A tests: Tool approval flow
+  文件 A 测试：工具审批流
 - File B tests: Batch completion behavior
+  文件 B 测试：批处理完成行为
 - File C tests: Abort functionality
+  文件 C 测试：中止功能
 
 Each domain is independent - fixing tool approval doesn't affect abort tests.
+各域独立 — 修复工具审批不影响中止测试。
 
-### 2. Create Focused Agent Tasks
+### 2. Create Focused Agent Tasks / 创建聚焦的代理任务
 
 Each agent gets:
+每个代理获得：
 - **Specific scope:** One test file or subsystem
 - **Clear goal:** Make these tests pass
 - **Constraints:** Don't change other code

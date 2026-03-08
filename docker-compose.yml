@@ -34,11 +34,12 @@ services:
     environment:
       IS_PERSISTENT: "TRUE"
       ANONYMIZED_TELEMETRY: "FALSE"
-    # 新版 Chroma 镜像健康检查接口可能变化，暂禁用以免阻塞 backend 启动
     healthcheck:
       disable: true
     networks:
       - rag_network
+    profiles:
+      - full
 
   redis:
     image: redis:7-alpine
@@ -59,6 +60,27 @@ services:
       - full
 
   # ===========================================
+  # OTLP Collector (Jaeger) for distributed tracing
+  # ===========================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: enterprise_rag_jaeger
+    restart: unless-stopped
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"  # Jaeger UI
+      - "${JAEGER_OTLP_PORT:-4317}:4317"  # OTLP gRPC
+      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318"  # OTLP HTTP
+      - "${JAEGER_COLLECTOR_ZIPKIN_PORT:-9411}:9411"
+      - "${JAEGER_QUERY_PORT:-16687}:16687"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=9411
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  # ===========================================
   # 应用服务（代码挂载：本地改动自动同步到容器，无需重建镜像）
   # ===========================================
   backend:
@@ -73,8 +95,11 @@ services:
       - ./backend:/app
       - ./data/uploads:/app/data/uploads
       - ./data/models:/app/data/models
+      # 文件夹同步挂载（每个知识库使用子目录，如 /data/sync/84）
+      - ./data/sync:/data/sync
+      # Docker socket for dynamic volume mounting
+      - /var/run/docker.sock:/var/run/docker.sock
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    # 环境在「容器启动时」从宿主机 .env 注入，改 .env 后重新 up 即可生效
     env_file:
       - .env
     environment:
@@ -98,6 +123,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - TZ=Asia/Shanghai
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - OTLP_ENDPOINT=${OTLP_ENDPOINT:-http://jaeger:14268/api/v2/spans}
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,38 +143,8 @@ services:
     profiles:
       - full
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: enterprise_rag_frontend
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-8501}:8501"
-    volumes:
-      - ./frontend:/app
-    # 环境在「容器启动时」从宿主机 .env 注入
-    env_file:
-      - .env
-    environment:
-      - API_BASE_URL=http://backend:8000/api
-      - BACKEND_URL=http://backend:8000
-      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:8501}
-      - TZ=Asia/Shanghai
-    depends_on:
-      - backend
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    networks:
-      - rag_network
-    profiles:
-      - full
-
   # React SPA 前端（主入口）
+  # 挂载 dist + nginx.conf：改前端代码执行 npm run build、改 nginx 配置改本文件，再 restart spa 即可生效，无需重建镜像
   spa:
     build:
       context: ./frontend_spa
@@ -156,6 +153,12 @@ services:
     restart: unless-stopped
     ports:
       - "${SPA_PORT:-3000}:80"
+      - "${SPA_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./frontend_spa/dist:/usr/share/nginx/html
+      - ./frontend_spa/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL 证书挂载（需要先运行 generate-ssl.sh 生成证书）
+      - ./frontend_spa/ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
     networks:
@@ -173,7 +176,9 @@ services:
       - ./backend:/app
       - ./data/uploads:/app/data/uploads
       - ./data/models:/app/data/models
-    command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info"]
+      # Docker socket for dynamic volume mounting
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["/bin/bash", "-c", "python -c 'import tiktoken' 2>/dev/null || pip install --quiet tiktoken && exec celery -A app.core.celery_app worker --loglevel=info"]
     env_file:
       - .env
     environment:
@@ -203,4 +208,5 @@ services:
 networks:
   rag_network:
     driver: bridge
-
+  jaeger:
+    driver: bridge

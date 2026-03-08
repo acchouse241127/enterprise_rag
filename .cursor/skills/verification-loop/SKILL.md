@@ -1,13 +1,14 @@
 ---
 name: verification-loop
 description: "A comprehensive verification system for Claude Code sessions."
+description_zh: Claude Code 会话的综合验证系统。
 ---
 
-# Verification Loop Skill
+# Verification Loop Skill / 验证循环技能
 
 A comprehensive verification system for Claude Code sessions.
 
-## When to Use
+## When to Use / 使用时机
 
 Invoke this skill:
 - After completing a feature or significant code change
@@ -15,7 +16,7 @@ Invoke this skill:
 - When you want to ensure quality gates pass
 - After refactoring
 
-## Verification Phases
+## Verification Phases / 验证阶段
 
 ### Phase 1: Build Verification
 ```bash
@@ -84,7 +85,7 @@ Review each changed file for:
 - Missing error handling
 - Potential edge cases
 
-## Output Format
+## Output Format / 输出格式
 
 After running all phases, produce a verification report:
 
@@ -106,7 +107,7 @@ Issues to Fix:
 2. ...
 ```
 
-## Continuous Mode
+## Continuous Mode / 连续模式
 
 For long sessions, run verification every 15 minutes or after major changes:
 
@@ -119,7 +120,7 @@ Set a mental checkpoint:
 Run: /verify
 ```
 
-## Integration with Hooks
+## Integration with Hooks / 与钩子集成
 
 This skill complements PostToolUse hooks but provides deeper verification.
 Hooks catch issues immediately; this skill provides comprehensive review.

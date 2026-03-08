@@ -26,3 +26,20 @@ data/
 # Git worktrees (reshaping branch)
 .worktrees/
 
+# Node
+node_modules/
+
+# Build / coverage
+dist/
+.coverage
+*.coverage.json
+coverage/
+*.tsbuildinfo
+
+# Frontend SPA build artifacts
+frontend_spa/dist/
+frontend_spa/coverage/
+
+# Backend coverage
+backend/.coverage
+backend/coverage*.json

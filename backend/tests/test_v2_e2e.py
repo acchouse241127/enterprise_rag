@@ -118,7 +118,7 @@ def test_upload_document(token, kb_id):
     - 后端：Python FastAPI
     - 数据库：PostgreSQL + pg_jieba
     - 向量数据库：ChromaDB
-    - 前端：Streamlit + React
+    - 前端：React SPA
     
     四、部署要求
     - Python 3.11+

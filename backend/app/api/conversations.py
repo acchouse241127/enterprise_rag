@@ -37,7 +37,10 @@ class ConversationResponse(BaseModel):
     id: int
     conversation_id: str
     knowledge_base_id: int
+    knowledge_base_name: str | None = None  # V2.0: 新增
     title: str | None
+    message_count: int | None = None  # V2.0: 新增
+    last_question: str | None = None  # V2.0: 新增
     is_shared: bool
     share_token: str | None
     share_expires_at: str | None
@@ -104,8 +107,32 @@ def list_conversations(
         limit=limit,
         offset=offset,
     )
-    return [
-        ConversationResponse(
+    
+    # 获取知识库名称映射
+    from app.services.knowledge_base_service import KnowledgeBaseService
+    kb_cache: dict[int, str] = {}
+    
+    result = []
+    for c in conversations:
+        # 获取知识库名称
+        kb_name = None
+        if c.knowledge_base_id not in kb_cache:
+            kb = KnowledgeBaseService.get_by_id(db, c.knowledge_base_id)
+            kb_cache[c.knowledge_base_id] = kb.name if kb else None
+        kb_name = kb_cache.get(c.knowledge_base_id)
+        
+        # 获取消息数量
+        message_count = len(ConversationService.get_messages(db, c.id))
+        
+        # 获取最后一条用户消息作为 last_question
+        messages = ConversationService.get_messages(db, c.id)
+        last_question = None
+        for msg in reversed(messages):
+            if msg.role == "user":
+                last_question = msg.content[:100] if msg.content else None
+                break
+        
+        result.append(ConversationResponse(
             id=c.id,
             conversation_id=c.conversation_id,
             knowledge_base_id=c.knowledge_base_id,
@@ -116,9 +143,9 @@ def list_conversations(
             user_id=c.user_id,
             created_at=c.created_at.isoformat(),
             updated_at=c.updated_at.isoformat(),
-        )
-        for c in conversations
-    ]
+        ))
+    
+    return result
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
@@ -347,15 +374,27 @@ def get_shared_conversation(
         raise HTTPException(status_code=404, detail="分享链接无效或已过期")
 
     messages = ConversationService.get_messages(db, conv.id)
+    
+    # 获取知识库名称
+    from app.services.knowledge_base_service import KnowledgeBaseService
+    kb = KnowledgeBaseService.get_by_id(db, conv.knowledge_base_id)
+    kb_name = kb.name if kb else None
+    
     return {
-        "title": conv.title,
-        "created_at": conv.created_at.isoformat(),
-        "messages": [
-            {
-                "role": m.role,
-                "content": m.content,
-                "created_at": m.created_at.isoformat(),
-            }
-            for m in messages
-        ],
+        "code": 0,
+        "message": "success",
+        "data": {
+            "id": str(conv.conversation_id),
+            "title": conv.title,
+            "knowledge_base_name": kb_name,
+            "created_at": conv.created_at.isoformat(),
+            "messages": [
+                {
+                    "role": m.role,
+                    "content": m.content,
+                    "created_at": m.created_at.isoformat(),
+                }
+                for m in messages
+            ],
+        },
     }

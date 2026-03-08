@@ -1,12 +1,12 @@
-# Eval Command
+# Eval Command / 评估命令
 
 Manage eval-driven development workflow.
 
-## Usage
+## Usage / 用法
 
 `/eval [define|check|report|list] [feature-name]`
 
-## Define Evals
+## Define Evals / 定义评估
 
 `/eval define feature-name`
 
@@ -33,7 +33,7 @@ Created: $(date)
 
 2. Prompt user to fill in specific criteria
 
-## Check Evals
+## Check Evals / 检查评估
 
 `/eval check feature-name`
 
@@ -58,7 +58,7 @@ Regression: X/Y passing
 Status: IN PROGRESS / READY
 ```
 
-## Report Evals
+## Report Evals / 报告评估
 
 `/eval report feature-name`
 
@@ -96,7 +96,7 @@ RECOMMENDATION
 [SHIP / NEEDS WORK / BLOCKED]
 ```
 
-## List Evals
+## List Evals / 列出评估
 
 `/eval list`
 
@@ -110,7 +110,7 @@ feature-search    [5/5 passing] READY
 feature-export    [0/4 passing] NOT STARTED
 ```
 
-## Arguments
+## Arguments / 参数
 
 $ARGUMENTS:
 - `define <name>` - Create new eval definition

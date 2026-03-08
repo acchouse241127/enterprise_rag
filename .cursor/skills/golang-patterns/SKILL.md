@@ -1,9 +1,10 @@
 ---
 name: golang-patterns
 description: Idiomatic Go patterns, best practices, and conventions for building robust, efficient, and maintainable Go applications.
+description_zh: 地道 Go 模式、最佳实践与约定，用于构建健壮、高效、可维护的 Go 应用。
 ---
 
-# Go Development Patterns
+# Go Development Patterns / Go 开发模式
 
 Idiomatic Go patterns and best practices for building robust, efficient, and maintainable applications.
 

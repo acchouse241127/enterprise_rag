@@ -1,12 +1,13 @@
 ---
 name: evolve
 description: Cluster related instincts into skills, commands, or agents
+description_zh: 将相关本能聚类为技能、命令或代理
 command: true
 ---
 
-# Evolve Command
+# Evolve Command / 进化命令
 
-## Implementation
+## Implementation / 实现
 
 Run the instinct CLI using the plugin root path:
 
@@ -25,7 +26,7 @@ Analyzes instincts and clusters related ones into higher-level structures:
 - **Skills**: When instincts describe auto-triggered behaviors
 - **Agents**: When instincts describe complex, multi-step processes
 
-## Usage
+## Usage / 用法
 
 ```
 /evolve                    # Analyze all instincts and suggest evolutions
@@ -34,7 +35,7 @@ Analyzes instincts and clusters related ones into higher-level structures:
 /evolve --threshold 5      # Require 5+ related instincts to cluster
 ```
 
-## Evolution Rules
+## Evolution Rules / 进化规则
 
 ### → Command (User-Invoked)
 When instincts describe actions a user would explicitly request:
@@ -76,7 +77,7 @@ Example:
 
 → Creates: `debugger` agent
 
-## What to Do
+## What to Do / 操作步骤
 
 1. Read all instincts from `~/.claude/homunculus/instincts/`
 2. Group instincts by:
@@ -89,7 +90,7 @@ Example:
    - Save to `~/.claude/homunculus/evolved/{commands,skills,agents}/`
 4. Link evolved structure back to source instincts
 
-## Output Format
+## Output Format / 输出格式
 
 ```
 🧬 Evolve Analysis
@@ -128,7 +129,7 @@ Files:
 Run `/evolve --execute` to create these files.
 ```
 
-## Flags
+## Flags / 选项
 
 - `--execute`: Actually create the evolved structures (default is preview)
 - `--dry-run`: Preview without creating
@@ -136,7 +137,7 @@ Run `/evolve --execute` to create these files.
 - `--threshold <n>`: Minimum instincts required to form cluster (default: 3)
 - `--type <command|skill|agent>`: Only create specified type
 
-## Generated File Format
+## Generated File Format / 生成文件格式
 
 ### Command
 ```markdown

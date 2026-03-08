@@ -5,7 +5,6 @@ Author: O3
 Date: 2026-02-13
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -48,7 +47,6 @@ class TestApiAuthentication:
 
     def test_expired_token_returns_401(self, client: TestClient) -> None:
         """Expired JWT token returns 401."""
-        from app.core.security import create_access_token
         from datetime import datetime, timedelta, timezone
         from jose import jwt
         from app.config import settings

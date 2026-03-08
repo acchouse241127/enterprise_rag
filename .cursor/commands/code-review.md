@@ -1,6 +1,7 @@
-# Code Review
+# Code Review / 代码审查
 
 Comprehensive security and quality review of uncommitted changes:
+对未提交变更进行全面的安全与质量审查：
 
 1. Get changed files: git diff --name-only HEAD
 

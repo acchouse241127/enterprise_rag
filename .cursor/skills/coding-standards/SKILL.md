@@ -1,13 +1,15 @@
 ---
 name: coding-standards
 description: Universal coding standards, best practices, and patterns for TypeScript, JavaScript, React, and Node.js development.
+description_zh: TypeScript、JavaScript、React、Node.js 开发的通用编码标准、最佳实践与模式。
 ---
 
-# Coding Standards & Best Practices
+# Coding Standards & Best Practices / 编码标准与最佳实践
 
 Universal coding standards applicable across all projects.
+适用于所有项目的通用编码标准。
 
-## Code Quality Principles
+## Code Quality Principles / 代码质量原则
 
 ### 1. Readability First
 - Code is read more than written

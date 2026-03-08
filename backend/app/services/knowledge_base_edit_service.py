@@ -237,7 +237,7 @@ class KnowledgeBaseEditService:
         doc_stmt = (
             select(Document)
             .where(Document.knowledge_base_id == knowledge_base_id)
-            .where(Document.is_current == True)
+            .where(Document.is_current.is_(True))
         )
         documents = list(db.execute(doc_stmt).scalars().all())
 

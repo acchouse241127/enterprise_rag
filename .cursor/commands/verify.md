@@ -1,8 +1,8 @@
-# Verification Command
+# Verification Command / 验证命令
 
 Run comprehensive verification on current codebase state.
 
-## Instructions
+## Instructions / 说明
 
 Execute verification in this exact order:
 
@@ -31,7 +31,7 @@ Execute verification in this exact order:
    - Show uncommitted changes
    - Show files modified since last commit
 
-## Output
+## Output / 输出
 
 Produce a concise verification report:
 
@@ -50,7 +50,7 @@ Ready for PR: [YES/NO]
 
 If any critical issues, list them with fix suggestions.
 
-## Arguments
+## Arguments / 参数
 
 $ARGUMENTS can be:
 - `quick` - Only build + types

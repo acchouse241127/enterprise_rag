@@ -27,8 +27,7 @@ class VerificationResult:
     action: VerificationAction
     confidence_score: ConfidenceScore | None
     citation_result: CitationResult | None
-    refusal_message: str | None
-    reason: str
+    reason: str  # 验证原因（包含拒答原因）
 
 
 class VerifyPipeline:
@@ -107,7 +106,6 @@ class VerifyPipeline:
                 action=VerificationAction.REFUSE,
                 confidence_score=confidence,
                 citation_result=citation,
-                refusal_message="根据现有知识库内容，无法提供可靠答案。",
                 reason=f"低置信度: {confidence_val:.2f}",
             )
 
@@ -117,7 +115,6 @@ class VerifyPipeline:
                 action=VerificationAction.FILTER,
                 confidence_score=confidence,
                 citation_result=citation,
-                refusal_message=None,
                 reason=f"引用准确度不足: {citation_acc:.2f}",
             )
 
@@ -126,7 +123,6 @@ class VerifyPipeline:
             action=VerificationAction.PASS,
             confidence_score=confidence,
             citation_result=citation,
-            refusal_message=None,
             reason=f"通过: 置信度={confidence_val:.2f}, 引用准确度={citation_acc:.2f}",
         )
 

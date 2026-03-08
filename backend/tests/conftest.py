@@ -95,7 +95,8 @@ skip_no_external_services = pytest.mark.skipif(
 @pytest.fixture
 def client() -> TestClient:
     """FastAPI test client."""
-    with TestClient(app) as test_client:
+    # httpx 0.28+ / starlette 0.35+ compatibility
+    with TestClient(app, base_url="http://test") as test_client:
         yield test_client
 
 

@@ -1,12 +1,13 @@
 ---
 description: Fix Go build errors, go vet warnings, and linter issues incrementally. Invokes the go-build-resolver agent for minimal, surgical fixes.
+description_zh: 渐进式修复 Go 构建错误、go vet 警告与 linter 问题。调用 go-build-resolver 代理进行最小化精确修复。
 ---
 
-# Go Build and Fix
+# Go Build and Fix / Go 构建与修复
 
 This command invokes the **go-build-resolver** agent to incrementally fix Go build errors with minimal changes.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Run Diagnostics**: Execute `go build`, `go vet`, `staticcheck`
 2. **Parse Errors**: Group by file and sort by severity
@@ -14,7 +15,7 @@ This command invokes the **go-build-resolver** agent to incrementally fix Go bui
 4. **Verify Each Fix**: Re-run build after each change
 5. **Report Summary**: Show what was fixed and what remains
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/go-build` when:
 - `go build ./...` fails with errors
@@ -23,7 +24,7 @@ Use `/go-build` when:
 - Module dependencies are broken
 - After pulling changes that break the build
 
-## Diagnostic Commands Run
+## Diagnostic Commands Run / 诊断命令
 
 ```bash
 # Primary build check
@@ -41,7 +42,7 @@ go mod verify
 go mod tidy -v
 ```
 
-## Example Session
+## Example Session / 示例会话
 
 ```text
 User: /go-build
@@ -143,7 +144,7 @@ ok      project/internal/handler   0.023s
 Build Status: ✅ SUCCESS
 ```
 
-## Common Errors Fixed
+## Common Errors Fixed / 常见修复错误
 
 | Error | Typical Fix |
 |-------|-------------|
@@ -155,7 +156,7 @@ Build Status: ✅ SUCCESS
 | `declared but not used` | Remove or use variable |
 | `cannot find package` | `go get` or `go mod tidy` |
 
-## Fix Strategy
+## Fix Strategy / 修复策略
 
 1. **Build errors first** - Code must compile
 2. **Vet warnings second** - Fix suspicious constructs
@@ -163,7 +164,7 @@ Build Status: ✅ SUCCESS
 4. **One fix at a time** - Verify each change
 5. **Minimal changes** - Don't refactor, just fix
 
-## Stop Conditions
+## Stop Conditions / 停止条件
 
 The agent will stop and report if:
 - Same error persists after 3 attempts
@@ -171,13 +172,13 @@ The agent will stop and report if:
 - Requires architectural changes
 - Missing external dependencies
 
-## Related Commands
+## Related Commands / 相关命令
 
 - `/go-test` - Run tests after build succeeds
 - `/go-review` - Review code quality
 - `/verify` - Full verification loop
 
-## Related
+## Related / 相关
 
 - Agent: `agents/go-build-resolver.md`
 - Skill: `skills/golang-patterns/`

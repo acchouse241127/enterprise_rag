@@ -6,7 +6,6 @@ Date: 2026-02-13
 Task: C2-2.3.1
 """
 
-import pytest
 
 from app.rag.dedup import deduplicate_chunks, hamming_distance, simhash
 

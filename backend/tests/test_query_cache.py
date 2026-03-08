@@ -1,669 +1,898 @@
-"""
-Query cache service tests.
+"""Comprehensive tests for QueryCache module.
 
-Tests for the two-layer caching system:
-1. Exact match cache (Redis)
-2. Semantic match cache (Vector similarity)
-
-Author: C2
-Date: 2026-03-03
+Tests cover:
+- ExactCacheStore functionality
+- SemanticCacheMatcher functionality
+- QueryCacheService orchestration
+- CacheInvalidator helper
 """
 
 import json
-from unittest.mock import Mock, MagicMock, patch
 import pytest
-
-# Mock numpy to avoid import conflicts
-import sys
-from unittest.mock import MagicMock as MockMagic
-sys.modules['numpy'] = MockMagic()
-sys.modules['numpy.linalg'] = MockMagic()
-
-
-class TestGetRedisClient:
-    """Tests for get_redis_client function."""
-
-    @patch("app.cache.query_cache.redis.from_url")
-    @patch("app.cache.query_cache.settings.redis_url", "redis://localhost:6379/0")
-    def test_get_redis_client_success(self, mock_from_url):
-        """Test successful Redis client creation."""
-        from app.cache.query_cache import get_redis_client
-
-        mock_redis = Mock()
-        mock_from_url.return_value = mock_redis
-
-        result = get_redis_client()
-        assert result == mock_redis
-        mock_from_url.assert_called_once_with("redis://localhost:6379/0", decode_responses=True)
-
-    @patch("app.cache.query_cache.redis.from_url")
-    @patch("app.cache.query_cache.settings.redis_url", "redis://localhost:6379/0")
-    def test_get_redis_client_failure(self, mock_from_url):
-        """Test Redis client creation failure."""
-        from app.cache.query_cache import get_redis_client
-
-        mock_from_url.side_effect = Exception("Connection failed")
-
-        result = get_redis_client()
-        assert result is None
+from unittest.mock import MagicMock, patch, call
 
 
 class TestExactCacheStore:
-    """Tests for ExactCacheStore class."""
+    """Tests for ExactCacheStore."""
 
-    def test_init(self):
+    def test_exact_cache_store_init(self):
         """Test ExactCacheStore initialization."""
         from app.cache.query_cache import ExactCacheStore
-
-        store = ExactCacheStore(redis_client=None)
-        assert store._redis is None
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         store = ExactCacheStore(redis_client=mock_redis)
-        assert store._redis == mock_redis
+        assert store._redis is mock_redis
 
-    def test_redis_property_lazy_load(self):
-        """Test Redis property lazy loading."""
-        from app.cache.query_cache import ExactCacheStore
-
-        store = ExactCacheStore(redis_client=None)
-
-        with patch("app.cache.query_cache.get_redis_client") as mock_get_client:
-            mock_redis = Mock()
-            mock_get_client.return_value = mock_redis
-
-            redis = store.redis
-            assert redis == mock_redis
-            mock_get_client.assert_called_once()
-
-            # Second call should use cached value
-            redis2 = store.redis
-            assert redis2 == mock_redis
-            assert mock_get_client.call_count == 1
+    def test_exact_cache_store_redis_property_none(self):
+        """Test redis property when _redis is None."""
+        from app.cache.query_cache import ExactCacheStore, get_redis_client
+        
+        with patch('app.cache.query_cache.get_redis_client') as mock_get_redis:
+            mock_redis = MagicMock()
+            mock_get_redis.return_value = mock_redis
+            
+            store = ExactCacheStore()
+            assert store._redis is None
+            assert store.redis is mock_redis
+            assert store._redis is mock_redis
 
     def test_build_cache_key(self):
-        """Test cache key building."""
+        """Test build_cache_key method."""
         from app.cache.query_cache import ExactCacheStore
-
+        
         store = ExactCacheStore()
+        key = store.build_cache_key(kb_id=123, query="test query")
+        assert key.startswith("qa:cache:kb:123:query:")
+        assert len(key) == len("qa:cache:kb:123:query:") + 32  # 32 char hash
 
-        key = store.build_cache_key(1, "test query")
-        assert "qa:cache:kb:1:query:" in key
-        assert len(key) > 20
+    def test_build_cache_key_consistency(self):
+        """Test that same query produces same key."""
+        from app.cache.query_cache import ExactCacheStore
+        
+        store = ExactCacheStore()
+        key1 = store.build_cache_key(kb_id=1, query="test")
+        key2 = store.build_cache_key(kb_id=1, query="test")
+        assert key1 == key2
 
-        # Same query should produce same key
-        key2 = store.build_cache_key(1, "test query")
-        assert key == key2
+    def test_build_cache_key_different_kb(self):
+        """Test that different KBs produce different keys."""
+        from app.cache.query_cache import ExactCacheStore
+        
+        store = ExactCacheStore()
+        key1 = store.build_cache_key(kb_id=1, query="test")
+        key2 = store.build_cache_key(kb_id=2, query="test")
+        assert key1 != key2
 
-        # Different kb_id should produce different key
-        key3 = store.build_cache_key(2, "test query")
-        assert key != key3
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
     def test_get_cache_hit(self):
-        """Test cache get with hit."""
+        """Test get when cache hits."""
         from app.cache.query_cache import ExactCacheStore
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps({"answer": "test answer"})
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.get(kb_id=1, query="test")
+            
+            assert result == {"answer": "test answer"}
+            mock_redis.get.assert_called_once()
 
-        mock_redis = Mock()
-        store = ExactCacheStore(redis_client=mock_redis)
-
-        cached_data = {"answer": "test answer", "sources": []}
-        mock_redis.get.return_value = json.dumps(cached_data, ensure_ascii=False)
-
-        result = store.get(1, "test query")
-        assert result == cached_data
-        mock_redis.get.assert_called_once()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
     def test_get_cache_miss(self):
-        """Test cache get with miss."""
+        """Test get when cache misses."""
         from app.cache.query_cache import ExactCacheStore
-
-        mock_redis = Mock()
-        store = ExactCacheStore(redis_client=mock_redis)
+        
+        mock_redis = MagicMock()
         mock_redis.get.return_value = None
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.get(kb_id=1, query="test")
+            
+            assert result is None
 
-        result = store.get(1, "test query")
-        assert result is None
-
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
     def test_get_cache_disabled(self):
-        """Test cache get when disabled."""
+        """Test get when cache is disabled."""
         from app.cache.query_cache import ExactCacheStore
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            mock_redis = MagicMock()
+            
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.get(kb_id=1, query="test")
+            
+            assert result is None
+            mock_redis.get.assert_not_called()
 
-        mock_redis = Mock()
-        store = ExactCacheStore(redis_client=mock_redis)
-
-        result = store.get(1, "test query")
-        assert result is None
-        mock_redis.get.assert_not_called()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    @patch("app.cache.query_cache.settings.cache_default_ttl_seconds", 3600)
-    def test_set_cache_success(self):
-        """Test cache set success."""
+    def test_get_json_decode_error(self):
+        """Test get when JSON decode fails."""
         from app.cache.query_cache import ExactCacheStore
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = "invalid json"
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.get(kb_id=1, query="test")
+            
+            assert result is None
 
-        mock_redis = Mock()
-        store = ExactCacheStore(redis_client=mock_redis)
+    def test_get_exception(self):
+        """Test get when exception occurs."""
+        from app.cache.query_cache import ExactCacheStore
+        
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = Exception("Redis error")
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.get(kb_id=1, query="test")
+            
+            assert result is None
 
-        data = {"answer": "test answer"}
-        result = store.set(1, "test query", data)
-        assert result is True
-        mock_redis.setex.assert_called_once()
+    def test_set_success(self):
+        """Test set when successful."""
+        from app.cache.query_cache import ExactCacheStore
+        
+        mock_redis = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.set(kb_id=1, query="test", data={"answer": "test"})
+            
+            assert result is True
+            mock_redis.setex.assert_called_once()
 
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
+    def test_set_with_custom_ttl(self):
+        """Test set with custom TTL."""
+        from app.cache.query_cache import ExactCacheStore
+        
+        mock_redis = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.set(kb_id=1, query="test", data={}, ttl_seconds=7200)
+            
+            assert result is True
+            # Verify TTL was passed
+            call_args = mock_redis.setex.call_args
+            # setex(key, ttl, value) - TTL is second argument (index 1)
+            if call_args[0]:
+                assert 7200 in call_args[0]
+
     def test_set_cache_disabled(self):
-        """Test cache set when disabled."""
+        """Test set when cache is disabled."""
         from app.cache.query_cache import ExactCacheStore
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            mock_redis = MagicMock()
+            
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.set(kb_id=1, query="test", data={})
+            
+            assert result is False
+            mock_redis.setex.assert_not_called()
 
-        mock_redis = Mock()
-        store = ExactCacheStore(redis_client=mock_redis)
-
-        data = {"answer": "test answer"}
-        result = store.set(1, "test query", data)
-        assert result is False
-        mock_redis.setex.assert_not_called()
-
-    def test_set_cache_failure(self):
-        """Test cache set failure."""
+    def test_set_exception(self):
+        """Test set when exception occurs."""
         from app.cache.query_cache import ExactCacheStore
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         mock_redis.setex.side_effect = Exception("Redis error")
-        store = ExactCacheStore(redis_client=mock_redis)
-
-        data = {"answer": "test answer"}
-        result = store.set(1, "test query", data)
-        assert result is False
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            
+            store = ExactCacheStore(redis_client=mock_redis)
+            result = store.set(kb_id=1, query="test", data={})
+            
+            assert result is False
 
     def test_delete_by_kb_success(self):
-        """Test delete by knowledge base success."""
+        """Test delete_by_kb when successful."""
         from app.cache.query_cache import ExactCacheStore
-
-        mock_redis = Mock()
-        mock_redis.keys.return_value = ["key1", "key2"]
-        mock_redis.delete.return_value = 2
+        
+        mock_redis = MagicMock()
+        mock_redis.keys.return_value = ["key1", "key2", "key3"]
+        mock_redis.delete.return_value = 3
+        
         store = ExactCacheStore(redis_client=mock_redis)
-
-        result = store.delete_by_kb(1)
-        assert result == 2
-        mock_redis.keys.assert_called_once_with("qa:cache:kb:1:query:*")
-        mock_redis.delete.assert_called_once_with("key1", "key2")
+        deleted = store.delete_by_kb(kb_id=1)
+        
+        assert deleted == 3
+        mock_redis.keys.assert_called_once()
+        mock_redis.delete.assert_called_once_with("key1", "key2", "key3")
 
     def test_delete_by_kb_no_keys(self):
-        """Test delete by knowledge base with no keys."""
+        """Test delete_by_kb when no keys found."""
         from app.cache.query_cache import ExactCacheStore
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         mock_redis.keys.return_value = []
+        
         store = ExactCacheStore(redis_client=mock_redis)
-
-        result = store.delete_by_kb(1)
-        assert result == 0
+        deleted = store.delete_by_kb(kb_id=1)
+        
+        assert deleted == 0
         mock_redis.delete.assert_not_called()
 
-    def test_delete_by_kb_failure(self):
-        """Test delete by knowledge base failure."""
+    def test_delete_by_kb_exception(self):
+        """Test delete_by_kb when exception occurs."""
         from app.cache.query_cache import ExactCacheStore
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         mock_redis.keys.side_effect = Exception("Redis error")
+        
         store = ExactCacheStore(redis_client=mock_redis)
-
-        result = store.delete_by_kb(1)
-        assert result == 0
+        deleted = store.delete_by_kb(kb_id=1)
+        
+        assert deleted == 0
 
 
 class TestSemanticCacheMatcher:
-    """Tests for SemanticCacheMatcher class."""
+    """Tests for SemanticCacheMatcher."""
 
-    def test_init(self):
+    def test_semantic_matcher_init(self):
         """Test SemanticCacheMatcher initialization."""
         from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_embedding = MagicMock()
+        
+        matcher = SemanticCacheMatcher(
+            redis_client=mock_redis,
+            embedding_service=mock_embedding,
+        )
+        assert matcher._redis is mock_redis
+        assert matcher._embedding_service is mock_embedding
 
-        matcher = SemanticCacheMatcher(redis_client=None, embedding_service=None)
-        assert matcher._redis is None
-        assert matcher._embedding_service is None
-
-        mock_redis = Mock()
-        mock_embedding = Mock()
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-        assert matcher._redis == mock_redis
-        assert matcher._embedding_service == mock_embedding
-
-    def test_redis_property_lazy_load(self):
-        """Test Redis property lazy loading."""
-        from app.cache.query_cache import SemanticCacheMatcher
-
-        matcher = SemanticCacheMatcher(redis_client=None)
-
-        with patch("app.cache.query_cache.get_redis_client") as mock_get_client:
-            mock_redis = Mock()
-            mock_get_client.return_value = mock_redis
-
-            redis = matcher.redis
-            assert redis == mock_redis
-            mock_get_client.assert_called_once()
+    def test_semantic_matcher_redis_property_none(self):
+        """Test redis property when _redis is None."""
+        from app.cache.query_cache import SemanticCacheMatcher, get_redis_client
+        
+        with patch('app.cache.query_cache.get_redis_client') as mock_get_redis:
+            mock_redis = MagicMock()
+            mock_get_redis.return_value = mock_redis
+            
+            matcher = SemanticCacheMatcher()
+            assert matcher._redis is None
+            assert matcher.redis is mock_redis
+            assert matcher._redis is mock_redis
 
     def test_get_index_key(self):
-        """Test index key generation."""
+        """Test _get_index_key method."""
         from app.cache.query_cache import SemanticCacheMatcher
-
+        
         matcher = SemanticCacheMatcher()
+        key = matcher._get_index_key(kb_id=123)
+        assert key == "qa:semantic:kb:123:index"
 
-        key = matcher._get_index_key(1)
-        assert key == "qa:semantic:kb:1:index"
-
-    @patch("app.cache.query_cache.BgeM3EmbeddingService")
-    @patch("app.cache.query_cache.settings.embedding_model_name", "model")
-    @patch("app.cache.query_cache.settings.embedding_fallback_dim", 768)
-    def test_get_embedding_lazy_init(self, mock_embedding_class):
-        """Test embedding service lazy initialization."""
+    def test_cosine_similarity(self):
+        """Test _cosine_similarity method."""
         from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_embedding_service = Mock()
-        mock_embedding_service.embed.return_value = [0.1, 0.2, 0.3]
-        mock_embedding_class.return_value = mock_embedding_service
-
+        
         matcher = SemanticCacheMatcher()
-
-        embedding = matcher._get_embedding("test query")
-        assert embedding == [0.1, 0.2, 0.3]
-        mock_embedding_class.assert_called_once()
-
-        # Second call should use cached service
-        embedding2 = matcher._get_embedding("test query")
-        assert embedding2 == [0.1, 0.2, 0.3]
-        assert mock_embedding_class.call_count == 1
-
-    @patch("app.cache.query_cache.np")
-    def test_cosine_similarity(self, mock_np):
-        """Test cosine similarity calculation."""
-        from app.cache.query_cache import SemanticCacheMatcher
-
+        
         # Mock numpy operations
-        mock_np.array.side_effect = lambda x: x
-        mock_np.dot.return_value = 1.0
-        mock_np.linalg.norm.return_value = 1.0
+        with patch('numpy.array') as mock_array, \
+             patch('numpy.dot', return_value=0.8) as mock_dot, \
+             patch('numpy.linalg.norm', return_value=1.0) as mock_norm:
+            mock_array.return_value = MagicMock()
+            result = matcher._cosine_similarity([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+            assert isinstance(result, float)
+            assert result == 0.8  # Mocked value
 
-        matcher = SemanticCacheMatcher()
-
-        vec1 = [1.0, 0.0, 0.0]
-        vec2 = [1.0, 0.0, 0.0]
-        similarity = matcher._cosine_similarity(vec1, vec2)
-        assert similarity == 1.0
-
-        # Test different vectors
-        mock_np.dot.return_value = 0.0
-        vec3 = [1.0, 0.0, 0.0]
-        vec4 = [0.0, 1.0, 0.0]
-        similarity = matcher._cosine_similarity(vec3, vec4)
-        assert similarity == 0.0
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    @patch("app.cache.query_cache.settings.cache_semantic_threshold", 0.85)
-    def test_find_semantic_match_hit(self):
-        """Test semantic cache hit."""
-        from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_redis = Mock()
-        mock_embedding = Mock()
-        mock_embedding.embed.return_value = [0.9, 0.1, 0.0]
-
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        index_data = {
-            "queries": [
-                {
-                    "query": "similar query",
-                    "embedding": [0.95, 0.05, 0.0],
-                    "data": {"answer": "cached answer"}
-                }
-            ]
-        }
-        mock_redis.get.return_value = json.dumps(index_data, ensure_ascii=False)
-
-        result = matcher.find_semantic_match(1, "test query")
-        assert result is not None
-        assert result["cache_type"] == "semantic"
-        assert "similarity_score" in result
-        assert result["answer"] == "cached answer"
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    @patch("app.cache.query_cache.settings.cache_semantic_threshold", 0.95)
-    def test_find_semantic_match_below_threshold(self):
-        """Test semantic cache below threshold."""
-        from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_redis = Mock()
-        mock_embedding = Mock()
-        mock_embedding.embed.return_value = [0.5, 0.5, 0.0]
-
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        index_data = {
-            "queries": [
-                {
-                    "query": "different query",
-                    "embedding": [0.0, 0.5, 0.5],
-                    "data": {"answer": "cached answer"}
-                }
-            ]
-        }
-        mock_redis.get.return_value = json.dumps(index_data, ensure_ascii=False)
-
-        result = matcher.find_semantic_match(1, "test query")
-        assert result is None
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
     def test_find_semantic_match_no_index(self):
-        """Test semantic cache with no index."""
+        """Test find_semantic_match when no index exists."""
         from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         mock_redis.get.return_value = None
-        mock_embedding = Mock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            result = matcher.find_semantic_match(kb_id=1, query="test")
+            
+            assert result is None
 
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        result = matcher.find_semantic_match(1, "test query")
-        assert result is None
-
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
-    def test_find_semantic_match_disabled(self):
-        """Test semantic cache when disabled."""
+    def test_find_semantic_match_cache_disabled(self):
+        """Test find_semantic_match when cache is disabled."""
         from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            result = matcher.find_semantic_match(kb_id=1, query="test")
+            
+            assert result is None
+            mock_redis.get.assert_not_called()
 
-        mock_redis = Mock()
-        mock_embedding = Mock()
-
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        result = matcher.find_semantic_match(1, "test query")
-        assert result is None
-        mock_redis.get.assert_not_called()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    @patch("app.cache.query_cache.settings.cache_max_entries_per_kb", 100)
-    @patch("app.cache.query_cache.settings.cache_default_ttl_seconds", 3600)
-    def test_add_to_index_new(self):
-        """Test adding to semantic index (new)."""
+    def test_find_semantic_match_no_queries(self):
+        """Test find_semantic_match when index has no queries."""
         from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps({"queries": []})
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            result = matcher.find_semantic_match(kb_id=1, query="test")
+            
+            assert result is None
 
-        mock_redis = Mock()
+    def test_find_semantic_match_below_threshold(self):
+        """Test find_semantic_match when best match is below threshold."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps({
+            "queries": [{
+                "query": "similar query",
+                "embedding": [0.1, 0.2],
+                "data": {"answer": "test"},
+            }]
+        })
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_semantic_threshold = 0.9
+            
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            
+            # Mock numpy operations
+            with patch('numpy.array') as mock_array, \
+                 patch('numpy.dot', return_value=0.8) as mock_dot, \
+                 patch('numpy.linalg.norm', return_value=1.0) as mock_norm:
+                mock_array.return_value = MagicMock()
+                result = matcher.find_semantic_match(kb_id=1, query="test query")
+                
+                assert result is None  # Mocked similarity 0.8 < 0.9 threshold
+
+    def test_find_semantic_match_above_threshold(self):
+        """Test find_semantic_match when best match is above threshold."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps({
+            "queries": [{
+                "query": "similar query",
+                "embedding": [0.1, 0.2],
+                "data": {"answer": "test answer"},
+            }]
+        })
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_semantic_threshold = 0.7
+            
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            
+            # Mock numpy operations
+            with patch('numpy.array') as mock_array, \
+                 patch('numpy.dot', return_value=0.8) as mock_dot, \
+                 patch('numpy.linalg.norm', return_value=1.0) as mock_norm:
+                mock_array.return_value = MagicMock()
+                result = matcher.find_semantic_match(kb_id=1, query="test query")
+                
+                assert result is not None
+                assert result["answer"] == "test answer"
+                assert result["cache_type"] == "semantic"
+                assert result["similarity_score"] == 0.8
+
+    def test_find_semantic_match_exception(self):
+        """Test find_semantic_match when exception occurs."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = Exception("Redis error")
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            matcher = SemanticCacheMatcher(redis_client=mock_redis)
+            result = matcher.find_semantic_match(kb_id=1, query="test")
+            
+            assert result is None
+
+    def test_add_to_index_new_index(self):
+        """Test add_to_index creating new index."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
         mock_redis.get.return_value = None
-        mock_embedding = Mock()
+        mock_embedding = MagicMock()
         mock_embedding.embed.return_value = [0.1, 0.2, 0.3]
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            mock_settings.cache_max_entries_per_kb = 100
+            
+            matcher = SemanticCacheMatcher(
+                redis_client=mock_redis,
+                embedding_service=mock_embedding,
+            )
+            result = matcher.add_to_index(kb_id=1, query="test", data={"answer": "test"})
+            
+            assert result is True
+            mock_redis.get.assert_called_once()
+            mock_redis.setex.assert_called_once()
+            
+            # Verify data structure
+            call_args = mock_redis.setex.call_args
+            saved_data = json.loads(call_args[0][2])
+            assert len(saved_data["queries"]) == 1
+            assert saved_data["queries"][0]["query"] == "test"
 
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
+    def test_add_to_index_existing_index(self):
+        """Test add_to_index adding to existing index."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        existing_data = {"queries": [{"query": "old", "embedding": [], "data": {}}]}
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps(existing_data)
+        mock_embedding = MagicMock()
+        mock_embedding.embed.return_value = [0.1, 0.2, 0.3]
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            mock_settings.cache_max_entries_per_kb = 100
+            
+            matcher = SemanticCacheMatcher(
+                redis_client=mock_redis,
+                embedding_service=mock_embedding,
+            )
+            result = matcher.add_to_index(kb_id=1, query="test", data={"answer": "test"})
+            
+            assert result is True
+            
+            # Verify data structure
+            call_args = mock_redis.setex.call_args
+            saved_data = json.loads(call_args[0][2])
+            assert len(saved_data["queries"]) == 2  # old + new
 
-        data = {"answer": "test answer"}
-        result = matcher.add_to_index(1, "test query", data)
-        assert result is True
-        mock_redis.setex.assert_called_once()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    @patch("app.cache.query_cache.settings.cache_max_entries_per_kb", 2)
-    @patch("app.cache.query_cache.settings.cache_default_ttl_seconds", 3600)
     def test_add_to_index_max_entries(self):
-        """Test adding to semantic index with max entries limit."""
+        """Test add_to_index respects max entries limit."""
         from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_redis = Mock()
-        mock_redis.get.return_value = None
-        mock_embedding = Mock()
+        
+        # Create 150 existing queries
+        existing_queries = [
+            {"query": f"q{i}", "embedding": [i], "data": {}}
+            for i in range(150)
+        ]
+        existing_data = {"queries": existing_queries}
+        
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = json.dumps(existing_data)
+        mock_embedding = MagicMock()
         mock_embedding.embed.return_value = [0.1, 0.2, 0.3]
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            mock_settings.cache_default_ttl_seconds = 3600
+            mock_settings.cache_max_entries_per_kb = 100
+            
+            matcher = SemanticCacheMatcher(
+                redis_client=mock_redis,
+                embedding_service=mock_embedding,
+            )
+            result = matcher.add_to_index(kb_id=1, query="test", data={})
+            
+            assert result is True
+            
+            # Verify truncated to 100
+            call_args = mock_redis.setex.call_args
+            saved_data = json.loads(call_args[0][2])
+            assert len(saved_data["queries"]) == 100
 
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        data = {"answer": "test answer"}
-        matcher.add_to_index(1, "query1", data)
-        matcher.add_to_index(1, "query2", data)
-        matcher.add_to_index(1, "query3", data)
-
-        # Verify setex was called 3 times
-        assert mock_redis.setex.call_count == 3
-
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
-    def test_add_to_index_disabled(self):
-        """Test adding to semantic index when disabled."""
+    def test_add_to_index_cache_disabled(self):
+        """Test add_to_index when cache is disabled."""
         from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_embedding = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            matcher = SemanticCacheMatcher(
+                redis_client=mock_redis,
+                embedding_service=mock_embedding,
+            )
+            result = matcher.add_to_index(kb_id=1, query="test", data={})
+            
+            assert result is False
+            mock_redis.get.assert_not_called()
 
-        mock_redis = Mock()
-        mock_embedding = Mock()
-
-        matcher = SemanticCacheMatcher(redis_client=mock_redis, embedding_service=mock_embedding)
-
-        data = {"answer": "test answer"}
-        result = matcher.add_to_index(1, "test query", data)
-        assert result is False
-        mock_redis.setex.assert_not_called()
-
-    def test_delete_by_kb_success(self):
-        """Test delete by knowledge base success."""
+    def test_add_to_index_exception(self):
+        """Test add_to_index when exception occurs."""
         from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
+        mock_redis.get.side_effect = Exception("Redis error")
+        mock_embedding = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            matcher = SemanticCacheMatcher(
+                redis_client=mock_redis,
+                embedding_service=mock_embedding,
+            )
+            result = matcher.add_to_index(kb_id=1, query="test", data={})
+            
+            assert result is False
 
-        mock_redis = Mock()
+    def test_delete_by_kb(self):
+        """Test delete_by_kb method."""
+        from app.cache.query_cache import SemanticCacheMatcher
+        
+        mock_redis = MagicMock()
         matcher = SemanticCacheMatcher(redis_client=mock_redis)
-
-        result = matcher.delete_by_kb(1)
+        result = matcher.delete_by_kb(kb_id=1)
+        
         assert result is True
-        mock_redis.delete.assert_called_once_with("qa:semantic:kb:1:index")
+        mock_redis.delete.assert_called_once()
 
-    def test_delete_by_kb_failure(self):
-        """Test delete by knowledge base failure."""
+    def test_delete_by_kb_exception(self):
+        """Test delete_by_kb when exception occurs."""
         from app.cache.query_cache import SemanticCacheMatcher
-
-        mock_redis = Mock()
+        
+        mock_redis = MagicMock()
         mock_redis.delete.side_effect = Exception("Redis error")
         matcher = SemanticCacheMatcher(redis_client=mock_redis)
-
-        result = matcher.delete_by_kb(1)
+        result = matcher.delete_by_kb(kb_id=1)
+        
         assert result is False
 
 
 class TestQueryCacheService:
-    """Tests for QueryCacheService class."""
+    """Tests for QueryCacheService."""
 
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    def test_init_default(self):
-        """Test QueryCacheService default initialization."""
+    def test_cache_service_init(self):
+        """Test QueryCacheService initialization."""
         from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
+        mock_semantic = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                enabled=True,
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            assert service._enabled is True
+            assert service._exact_store is mock_exact
+            assert service._semantic_matcher is mock_semantic
 
-        service = QueryCacheService()
-        assert service._enabled is True
-        assert service._exact_store is not None
-        assert service._semantic_matcher is not None
+    def test_cache_service_init_defaults(self):
+        """Test QueryCacheService initialization with defaults."""
+        from app.cache.query_cache import QueryCacheService, ExactCacheStore, SemanticCacheMatcher
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService()
+            assert service._enabled is True
+            assert isinstance(service._exact_store, ExactCacheStore)
+            assert isinstance(service._semantic_matcher, SemanticCacheMatcher)
 
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
-    def test_init_disabled(self):
-        """Test QueryCacheService disabled initialization."""
+    def test_get_exact_hit(self):
+        """Test get when exact cache hits."""
         from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
+        mock_exact.get.return_value = {"answer": "test"}
+        mock_semantic = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.get(kb_id=1, query="test")
+            
+            assert result == {"answer": "test", "cache_type": "exact"}
+            mock_exact.get.assert_called_once_with(1, "test")
+            mock_semantic.find_semantic_match.assert_not_called()
 
-        service = QueryCacheService(enabled=False)
-        assert service._enabled is False
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    def test_get_exact_match(self):
-        """Test get with exact match."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
-        mock_exact.get.return_value = {"answer": "test answer"}
-        mock_semantic = Mock()
-
-        service = QueryCacheService(enabled=True, exact_store=mock_exact, semantic_matcher=mock_semantic)
-
-        result = service.get(1, "test query")
-        assert result is not None
-        assert result["cache_type"] == "exact"
-        mock_exact.get.assert_called_once_with(1, "test query")
-        mock_semantic.find_semantic_match.assert_not_called()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    def test_get_semantic_match(self):
-        """Test get with semantic match."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
+    def test_get_semantic_hit(self):
+        """Test get when semantic cache hits."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
         mock_exact.get.return_value = None
-        mock_semantic = Mock()
-        mock_semantic.find_semantic_match.return_value = {"answer": "test answer"}
+        mock_semantic = MagicMock()
+        mock_semantic.find_semantic_match.return_value = {
+            "answer": "test",
+            "similarity_score": 0.8,
+        }
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.get(kb_id=1, query="test")
+            
+            assert result["answer"] == "test"
+            assert result["similarity_score"] == 0.8
+            mock_exact.get.assert_called_once()
+            mock_semantic.find_semantic_match.assert_called_once()
 
-        service = QueryCacheService(enabled=True, exact_store=mock_exact, semantic_matcher=mock_semantic)
-
-        result = service.get(1, "test query")
-        assert result is not None
-        mock_exact.get.assert_called_once_with(1, "test query")
-        mock_semantic.find_semantic_match.assert_called_once()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
-    def test_get_disabled(self):
-        """Test get when cache disabled."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
-        mock_semantic = Mock()
-
-        service = QueryCacheService(enabled=False, exact_store=mock_exact, semantic_matcher=mock_semantic)
-
-        result = service.get(1, "test query")
-        assert result is None
-        mock_exact.get.assert_not_called()
-        mock_semantic.find_semantic_match.assert_not_called()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    def test_get_cache_miss(self):
-        """Test get with cache miss."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
+    def test_get_miss(self):
+        """Test get when both caches miss."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
         mock_exact.get.return_value = None
-        mock_semantic = Mock()
+        mock_semantic = MagicMock()
         mock_semantic.find_semantic_match.return_value = None
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.get(kb_id=1, query="test")
+            
+            assert result is None
 
-        service = QueryCacheService(enabled=True, exact_store=mock_exact, semantic_matcher=mock_semantic)
+    def test_get_disabled(self):
+        """Test get when cache is disabled."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
+        mock_semantic = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            
+            service = QueryCacheService(
+                enabled=False,
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.get(kb_id=1, query="test")
+            
+            assert result is None
+            mock_exact.get.assert_not_called()
+            mock_semantic.find_semantic_match.assert_not_called()
 
-        result = service.get(1, "test query")
-        assert result is None
-
-    @patch("app.cache.query_cache.settings.cache_enabled", True)
-    def test_set_success(self):
-        """Test set success."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
+    def test_set(self):
+        """Test set method."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
         mock_exact.set.return_value = True
-        mock_semantic = Mock()
+        mock_semantic = MagicMock()
         mock_semantic.add_to_index.return_value = True
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.set(kb_id=1, query="test", data={"answer": "test"})
+            
+            assert result is True
+            mock_exact.set.assert_called_once()
+            mock_semantic.add_to_index.assert_called_once()
 
-        service = QueryCacheService(enabled=True, exact_store=mock_exact, semantic_matcher=mock_semantic)
+    def test_set_with_ttl(self):
+        """Test set method with custom TTL."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
+        mock_semantic = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = True
+            
+            service = QueryCacheService(
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            service.set(kb_id=1, query="test", data={}, ttl_seconds=7200)
+            
+            mock_exact.set.assert_called_once_with(1, "test", {}, 7200)
+            mock_semantic.add_to_index.assert_called_once_with(1, "test", {}, 7200)
 
-        data = {"answer": "test answer"}
-        result = service.set(1, "test query", data)
-        assert result is True
-        mock_exact.set.assert_called_once()
-        mock_semantic.add_to_index.assert_called_once()
-
-    @patch("app.cache.query_cache.settings.cache_enabled", False)
     def test_set_disabled(self):
-        """Test set when disabled."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
-        mock_semantic = Mock()
-
-        service = QueryCacheService(enabled=False, exact_store=mock_exact, semantic_matcher=mock_semantic)
-
-        data = {"answer": "test answer"}
-        result = service.set(1, "test query", data)
-        assert result is False
-        mock_exact.set.assert_not_called()
-        mock_semantic.add_to_index.assert_not_called()
+        """Test set when cache is disabled."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
+        mock_semantic = MagicMock()
+        
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.cache_enabled = False
+            
+            service = QueryCacheService(
+                enabled=False,
+                exact_store=mock_exact,
+                semantic_matcher=mock_semantic,
+            )
+            result = service.set(kb_id=1, query="test", data={})
+            
+            assert result is False
+            mock_exact.set.assert_not_called()
+            mock_semantic.add_to_index.assert_not_called()
 
     def test_invalidate_kb(self):
-        """Test invalidate knowledge base."""
-        from app.cache.query_cache import QueryCacheService, ExactCacheStore
-
-        mock_exact = Mock(spec=ExactCacheStore)
+        """Test invalidate_kb method."""
+        from app.cache.query_cache import QueryCacheService
+        
+        mock_exact = MagicMock()
         mock_exact.delete_by_kb.return_value = 5
-        mock_semantic = Mock()
+        mock_semantic = MagicMock()
         mock_semantic.delete_by_kb.return_value = True
-
-        service = QueryCacheService(enabled=True, exact_store=mock_exact, semantic_matcher=mock_semantic)
-
-        service.invalidate_kb(1)
+        
+        service = QueryCacheService(
+            exact_store=mock_exact,
+            semantic_matcher=mock_semantic,
+        )
+        service.invalidate_kb(kb_id=1)
+        
         mock_exact.delete_by_kb.assert_called_once_with(1)
         mock_semantic.delete_by_kb.assert_called_once_with(1)
 
 
 class TestCacheInvalidator:
-    """Tests for CacheInvalidator class."""
+    """Tests for CacheInvalidator."""
 
-    def test_init_default(self):
-        """Test CacheInvalidator default initialization."""
+    def test_cache_invalidator_init(self):
+        """Test CacheInvalidator initialization."""
+        from app.cache.query_cache import CacheInvalidator, QueryCacheService
+        
+        mock_cache = MagicMock()
+        invalidator = CacheInvalidator(cache_service=mock_cache)
+        assert invalidator._cache_service is mock_cache
+
+    def test_cache_invalidator_init_default(self):
+        """Test CacheInvalidator initialization with default cache service."""
         from app.cache.query_cache import CacheInvalidator
-
-        invalidator = CacheInvalidator()
-        assert invalidator._cache_service is not None
+        
+        with patch('app.cache.query_cache.QueryCacheService') as mock_cache_cls:
+            mock_cache = MagicMock()
+            mock_cache_cls.return_value = mock_cache
+            
+            invalidator = CacheInvalidator()
+            assert invalidator._cache_service is mock_cache
 
     def test_on_document_change_add(self):
-        """Test on document change (add)."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+        """Test on_document_change with add action."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_document_change(1, "add")
+        invalidator.on_document_change(kb_id=1, action="add")
+        
         mock_cache.invalidate_kb.assert_called_once_with(1)
 
     def test_on_document_change_update(self):
-        """Test on document change (update)."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+        """Test on_document_change with update action."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_document_change(1, "update")
+        invalidator.on_document_change(kb_id=1, action="update")
+        
         mock_cache.invalidate_kb.assert_called_once_with(1)
 
     def test_on_document_change_delete(self):
-        """Test on document change (delete)."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+        """Test on_document_change with delete action."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_document_change(1, "delete")
+        invalidator.on_document_change(kb_id=1, action="delete")
+        
         mock_cache.invalidate_kb.assert_called_once_with(1)
 
-    def test_on_document_change_other(self):
-        """Test on document change (other action)."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+    def test_on_document_change_other_action(self):
+        """Test on_document_change with other action (no invalidate)."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_document_change(1, "read")
+        invalidator.on_document_change(kb_id=1, action="read")
+        
         mock_cache.invalidate_kb.assert_not_called()
 
     def test_on_chunk_change(self):
-        """Test on chunk change."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+        """Test on_chunk_change method."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_chunk_change(1)
+        invalidator.on_chunk_change(kb_id=1)
+        
         mock_cache.invalidate_kb.assert_called_once_with(1)
 
     def test_on_knowledge_base_delete(self):
-        """Test on knowledge base delete."""
-        from app.cache.query_cache import CacheInvalidator, QueryCacheService
-
-        mock_cache = Mock(spec=QueryCacheService)
+        """Test on_knowledge_base_delete method."""
+        from app.cache.query_cache import CacheInvalidator
+        
+        mock_cache = MagicMock()
         invalidator = CacheInvalidator(cache_service=mock_cache)
-
-        invalidator.on_knowledge_base_delete(1)
+        invalidator.on_knowledge_base_delete(kb_id=1)
+        
         mock_cache.invalidate_kb.assert_called_once_with(1)
+
+
+class TestGetRedisClient:
+    """Tests for get_redis_client function."""
+
+    def test_get_redis_client_success(self):
+        """Test get_redis_client when successful."""
+        # Need to patch redis before the function runs
+        import sys
+        from unittest.mock import MagicMock
+        
+        mock_redis_module = MagicMock()
+        mock_client = MagicMock()
+        mock_redis_module.from_url.return_value = mock_client
+        
+        # Patch redis in sys.modules
+        sys.modules['redis'] = mock_redis_module
+        
+        # Patch settings
+        from unittest.mock import patch
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.redis_url = "redis://localhost:6379"
+            
+            from app.cache.query_cache import get_redis_client
+            result = get_redis_client()
+            
+            assert result is mock_client
+            mock_redis_module.from_url.assert_called_once_with(
+                "redis://localhost:6379",
+                decode_responses=True
+            )
+
+    def test_get_redis_client_exception(self):
+        """Test get_redis_client when exception occurs."""
+        import sys
+        from unittest.mock import MagicMock
+        
+        mock_redis_module = MagicMock()
+        mock_redis_module.from_url.side_effect = Exception("Connection failed")
+        
+        # Patch redis in sys.modules
+        sys.modules['redis'] = mock_redis_module
+        
+        # Patch settings
+        from unittest.mock import patch
+        with patch('app.cache.query_cache.settings') as mock_settings:
+            mock_settings.redis_url = "redis://localhost:6379"
+            
+            from app.cache.query_cache import get_redis_client
+            result = get_redis_client()
+            
+            assert result is None

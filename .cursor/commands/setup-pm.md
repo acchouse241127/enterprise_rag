@@ -1,13 +1,14 @@
 ---
 description: Configure your preferred package manager (npm/pnpm/yarn/bun)
+description_zh: 配置项目或全局的首选包管理器（npm/pnpm/yarn/bun）
 disable-model-invocation: true
 ---
 
-# Package Manager Setup
+# Package Manager Setup / 包管理器设置
 
 Configure your preferred package manager for this project or globally.
 
-## Usage
+## Usage / 用法
 
 ```bash
 # Detect current package manager
@@ -23,7 +24,7 @@ node scripts/setup-package-manager.js --project bun
 node scripts/setup-package-manager.js --list
 ```
 
-## Detection Priority
+## Detection Priority / 检测优先级
 
 When determining which package manager to use, the following order is checked:
 
@@ -34,7 +35,7 @@ When determining which package manager to use, the following order is checked:
 5. **Global config**: `~/.claude/package-manager.json`
 6. **Fallback**: First available package manager (pnpm > bun > yarn > npm)
 
-## Configuration Files
+## Configuration Files / 配置文件
 
 ### Global Configuration
 ```json
@@ -59,7 +60,7 @@ When determining which package manager to use, the following order is checked:
 }
 ```
 
-## Environment Variable
+## Environment Variable / 环境变量
 
 Set `CLAUDE_PACKAGE_MANAGER` to override all other detection methods:
 
@@ -71,7 +72,7 @@ $env:CLAUDE_PACKAGE_MANAGER = "pnpm"
 export CLAUDE_PACKAGE_MANAGER=pnpm
 ```
 
-## Run the Detection
+## Run the Detection / 运行检测
 
 To see current package manager detection results, run:
 

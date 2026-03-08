@@ -1,13 +1,14 @@
 ---
 name: security-review
 description: Use this skill when adding authentication, handling user input, working with secrets, creating API endpoints, or implementing payment/sensitive features. Provides comprehensive security checklist and patterns.
+description_zh: 添加认证、处理用户输入、处理密钥、创建 API 端点或实现支付/敏感功能时使用。提供全面安全清单与模式。
 ---
 
-# Security Review Skill
+# Security Review Skill / 安全审查技能
 
 This skill ensures all code follows security best practices and identifies potential vulnerabilities.
 
-## When to Activate
+## When to Activate / 激活时机
 
 - Implementing authentication or authorization
 - Handling user input or file uploads
@@ -17,7 +18,7 @@ This skill ensures all code follows security best practices and identifies poten
 - Storing or transmitting sensitive data
 - Integrating third-party APIs
 
-## Security Checklist
+## Security Checklist / 安全清单
 
 ### 1. Secrets Management
 

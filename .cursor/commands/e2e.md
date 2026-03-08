@@ -1,12 +1,13 @@
 ---
 description: Generate and run end-to-end tests with Playwright. Creates test journeys, runs tests, captures screenshots/videos/traces, and uploads artifacts.
+description_zh: 使用 Playwright 生成并运行端到端测试。创建测试历程、运行测试、捕获截图/视频/trace 并上传制品。
 ---
 
-# E2E Command
+# E2E Command / E2E 命令
 
 This command invokes the **e2e-runner** agent to generate, maintain, and execute end-to-end tests using Playwright.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Generate Test Journeys** - Create Playwright tests for user flows
 2. **Run E2E Tests** - Execute tests across browsers
@@ -14,7 +15,7 @@ This command invokes the **e2e-runner** agent to generate, maintain, and execute
 4. **Upload Results** - HTML reports and JUnit XML
 5. **Identify Flaky Tests** - Quarantine unstable tests
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/e2e` when:
 - Testing critical user journeys (login, trading, payments)
@@ -23,7 +24,7 @@ Use `/e2e` when:
 - Validating integration between frontend and backend
 - Preparing for production deployment
 
-## How It Works
+## How It Works / 工作方式
 
 The e2e-runner agent will:
 
@@ -34,7 +35,7 @@ The e2e-runner agent will:
 5. **Generate report** with results and artifacts
 6. **Identify flaky tests** and recommend fixes
 
-## Example Usage
+## Example Usage / 示例用法
 
 ```
 User: /e2e Test the market search and view flow
@@ -202,7 +203,7 @@ View report: npx playwright show-report
 ✅ E2E test suite ready for CI/CD integration!
 ```
 
-## Test Artifacts
+## Test Artifacts / 测试制品
 
 When tests run, the following artifacts are captured:
 
@@ -217,7 +218,7 @@ When tests run, the following artifacts are captured:
 - Network logs
 - Console logs
 
-## Viewing Artifacts
+## Viewing Artifacts / 查看制品
 
 ```bash
 # View HTML report in browser
@@ -230,7 +231,7 @@ npx playwright show-trace artifacts/trace-abc123.zip
 open artifacts/search-results.png
 ```
 
-## Flaky Test Detection
+## Flaky Test Detection / 不稳定测试检测
 
 If a test fails intermittently:
 
@@ -251,7 +252,7 @@ Recommended fixes:
 Quarantine recommendation: Mark as test.fixme() until fixed
 ```
 
-## Browser Configuration
+## Browser Configuration / 浏览器配置
 
 Tests run on multiple browsers by default:
 - ✅ Chromium (Desktop Chrome)
@@ -261,7 +262,7 @@ Tests run on multiple browsers by default:
 
 Configure in `playwright.config.ts` to adjust browsers.
 
-## CI/CD Integration
+## CI/CD Integration / CI/CD 集成
 
 Add to your CI pipeline:
 
@@ -281,7 +282,7 @@ Add to your CI pipeline:
     path: playwright-report/
 ```
 
-## PMX-Specific Critical Flows
+## PMX-Specific Critical Flows / PMX 特定关键流程
 
 For PMX, prioritize these E2E tests:
 
@@ -302,7 +303,7 @@ For PMX, prioritize these E2E tests:
 5. Filter and sort markets
 6. Mobile responsive layout
 
-## Best Practices
+## Best Practices / 最佳实践
 
 **DO:**
 - ✅ Use Page Object Model for maintainability
@@ -320,7 +321,7 @@ For PMX, prioritize these E2E tests:
 - ❌ Skip artifact review on failures
 - ❌ Test every edge case with E2E (use unit tests)
 
-## Important Notes
+## Important Notes / 重要说明
 
 **CRITICAL for PMX:**
 - E2E tests involving real money MUST run on testnet/staging only
@@ -328,19 +329,19 @@ For PMX, prioritize these E2E tests:
 - Set `test.skip(process.env.NODE_ENV === 'production')` for financial tests
 - Use test wallets with small test funds only
 
-## Integration with Other Commands
+## Integration with Other Commands / 与其他命令的集成
 
 - Use `/plan` to identify critical journeys to test
 - Use `/tdd` for unit tests (faster, more granular)
 - Use `/e2e` for integration and user journey tests
 - Use `/code-review` to verify test quality
 
-## Related Agents
+## Related Agents / 相关代理
 
 This command invokes the `e2e-runner` agent located at:
 `~/.claude/agents/e2e-runner.md`
 
-## Quick Commands
+## Quick Commands / 快捷命令
 
 ```bash
 # Run all E2E tests

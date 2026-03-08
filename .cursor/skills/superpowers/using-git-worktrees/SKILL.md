@@ -1,19 +1,23 @@
 ---
 name: using-git-worktrees
 description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - creates isolated git worktrees with smart directory selection and safety verification
+description_zh: 在需要与当前工作区隔离的功能工作或执行实现计划前使用 — 通过智能目录选择与安全验证创建隔离 git worktree
 ---
 
-# Using Git Worktrees
+# Using Git Worktrees / 使用 Git Worktrees
 
-## Overview
+## Overview / 概述
 
 Git worktrees create isolated workspaces sharing the same repository, allowing work on multiple branches simultaneously without switching.
+Git worktree 创建共享同一仓库的隔离工作区，可在不切换的情况下同时处理多分支。
 
 **Core principle:** Systematic directory selection + safety verification = reliable isolation.
+**核心原则：** 系统性目录选择 + 安全验证 = 可靠隔离。
 
 **Announce at start:** "I'm using the using-git-worktrees skill to set up an isolated workspace."
+**开始时宣布：** "我正使用 using-git-worktrees 技能设置隔离工作区。"
 
-## Directory Selection Process
+## Directory Selection Process / 目录选择流程
 
 Follow this priority order:
 

@@ -1,12 +1,13 @@
 ---
 description: Enforce TDD workflow for Go. Write table-driven tests first, then implement. Verify 80%+ coverage with go test -cover.
+description_zh: 强制执行 Go 的 TDD 工作流。先写表驱动测试再实现。用 go test -cover 验证 80%+ 覆盖率。
 ---
 
-# Go TDD Command
+# Go TDD Command / Go TDD 命令
 
 This command enforces test-driven development methodology for Go code using idiomatic Go testing patterns.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Define Types/Interfaces**: Scaffold function signatures first
 2. **Write Table-Driven Tests**: Create comprehensive test cases (RED)
@@ -15,7 +16,7 @@ This command enforces test-driven development methodology for Go code using idio
 5. **Refactor**: Improve while keeping tests green
 6. **Check Coverage**: Ensure 80%+ coverage
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/go-test` when:
 - Implementing new Go functions
@@ -24,7 +25,7 @@ Use `/go-test` when:
 - Building critical business logic
 - Learning TDD workflow in Go
 
-## TDD Cycle
+## TDD Cycle / TDD 周期
 
 ```
 RED     → Write failing table-driven test
@@ -33,7 +34,7 @@ REFACTOR → Improve code, tests stay green
 REPEAT  → Next test case
 ```
 
-## Example Session
+## Example Session / 示例会话
 
 ````
 User: /go-test I need a function to validate email addresses
@@ -169,7 +170,7 @@ ok      project/validator    0.003s
 ## TDD Complete!
 ````
 
-## Test Patterns
+## Test Patterns / 测试模式
 
 ### Table-Driven Tests
 ```go
@@ -212,7 +213,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 }
 ```
 
-## Coverage Commands
+## Coverage Commands / 覆盖率命令
 
 ```bash
 # Basic coverage
@@ -231,7 +232,7 @@ go tool cover -func=coverage.out
 go test -race -cover ./...
 ```
 
-## Coverage Targets
+## Coverage Targets / 覆盖率目标
 
 | Code Type | Target |
 |-----------|--------|
@@ -240,7 +241,7 @@ go test -race -cover ./...
 | General code | 80%+ |
 | Generated code | Exclude |
 
-## TDD Best Practices
+## TDD Best Practices / TDD 最佳实践
 
 **DO:**
 - Write test FIRST, before any implementation
@@ -256,13 +257,13 @@ go test -race -cover ./...
 - Use `time.Sleep` in tests
 - Ignore flaky tests
 
-## Related Commands
+## Related Commands / 相关命令
 
 - `/go-build` - Fix build errors
 - `/go-review` - Review code after implementation
 - `/verify` - Run full verification loop
 
-## Related
+## Related / 相关
 
 - Skill: `skills/golang-testing/`
 - Skill: `skills/tdd-workflow/`

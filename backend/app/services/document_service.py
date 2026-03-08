@@ -1,6 +1,7 @@
 """Document domain service."""
 
 import hashlib
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -9,9 +10,66 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.document_parser import get_parser_for_extension
+from app.document_parser import content_list_to_chunks, get_parser_for_extension
 from app.models import Document, KnowledgeBase
 from app.rag import BgeM3EmbeddingService, ChromaVectorStore, TextChunker
+from app.rag.chunker import ChunkMode
+
+logger = logging.getLogger(__name__)
+
+# B3.1: 文件类型到分块模式的映射
+# 文档类型（pdf/docx/txt/md）使用 sentence 模式，保持语义完整性
+# 表格/演示类型（xlsx/pptx）使用 char 模式，因为内容较短且结构化
+FILE_TYPE_CHUNK_MODE: dict[str, ChunkMode] = {
+    # 文档类型 → sentence 模式
+    "pdf": "sentence",
+    "docx": "sentence",
+    "doc": "sentence",
+    "txt": "sentence",
+    "md": "sentence",
+    "markdown": "sentence",
+    "html": "sentence",
+    "htm": "sentence",
+    # 表格/演示类型 → char 模式
+    "xlsx": "char",
+    "xls": "char",
+    "pptx": "char",
+    "ppt": "char",
+    # 音视频/图片 → 默认 sentence（内容通常是从转录/OCR提取的文字）
+    "mp3": "sentence",
+    "wav": "sentence",
+    "mp4": "sentence",
+    "webm": "sentence",
+    "png": "sentence",
+    "jpg": "sentence",
+    "jpeg": "sentence",
+    # URL → sentence
+    "url": "sentence",
+}
+
+
+def get_chunk_mode_for_file(filename: str, file_type: str | None = None) -> ChunkMode:
+    """
+    根据文件类型返回推荐的分块模式。
+
+    Args:
+        filename: 文件名（用于提取扩展名）
+        file_type: 文件类型（可选，优先使用）
+
+    Returns:
+        ChunkMode: 'sentence' 或 'char'
+    """
+    # 先检查 file_type
+    if file_type and file_type in FILE_TYPE_CHUNK_MODE:
+        return FILE_TYPE_CHUNK_MODE[file_type]
+
+    # 再检查扩展名
+    suffix = Path(filename).suffix.lower().lstrip(".")
+    if suffix in FILE_TYPE_CHUNK_MODE:
+        return FILE_TYPE_CHUNK_MODE[suffix]
+
+    # 默认使用 sentence 模式
+    return "sentence"
 
 
 class DocumentService:
@@ -31,6 +89,49 @@ class DocumentService:
     )
 
     @staticmethod
+    def _get_chunker(
+        chunk_size: int | None = None,
+        chunk_overlap: int | None = None,
+    ) -> TextChunker:
+        """Get chunker with optional custom parameters (B3.2)."""
+        return TextChunker(
+            chunk_size=chunk_size or settings.chunk_size,
+            chunk_overlap=chunk_overlap or settings.chunk_overlap,
+        )
+
+    @staticmethod
+    def _chunk_text(
+        text: str,
+        filename: str,
+        file_type: str | None = None,
+        chunk_size: int | None = None,
+        chunk_overlap: int | None = None,
+    ) -> list[str]:
+        """
+        Chunk text using appropriate mode for file type (B3.1).
+
+        Args:
+            text: Text to chunk
+            filename: Original filename (for determining chunk mode)
+            file_type: File type (optional)
+            chunk_size: Custom chunk size (B3.2)
+            chunk_overlap: Custom chunk overlap (B3.2)
+
+        Returns:
+            List of text chunks
+        """
+        chunker = DocumentService._get_chunker(chunk_size, chunk_overlap)
+        mode = get_chunk_mode_for_file(filename, file_type)
+        chunks = chunker.chunk(text, mode=mode)
+        logger.debug(
+            "Chunked %s with mode=%s, chunks=%d",
+            filename,
+            mode,
+            len(chunks),
+        )
+        return chunks
+
+    @staticmethod
     def list_by_kb(db: Session, knowledge_base_id: int) -> list[Document]:
         stmt = (
             select(Document)
@@ -45,6 +146,45 @@ class DocumentService:
         return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
+    def _process_parsed_contents(
+        contents,  # list[ParsedContent]
+        doc: Document,
+        kb_chunk_size: int | None,
+        kb_chunk_overlap: int | None,
+    ) -> tuple[list[str], str]:
+        """
+        Process parsed contents into chunks.
+
+        Uses the new content_list_to_chunks converter to preserve
+        type prefixes like [表格], [图片], [公式].
+
+        Args:
+            contents: List of ParsedContent from parser
+            doc: Document model instance
+            kb_chunk_size: KB-level chunk size override
+            kb_chunk_overlap: KB-level chunk overlap override
+
+        Returns:
+            Tuple of (chunks list, content_text string)
+        """
+        # Convert ParsedContent list to text chunks with type prefixes
+        raw_chunks = content_list_to_chunks(contents, include_type_prefix=True)
+
+        # Combine for content_text storage
+        content_text = "\n\n".join(raw_chunks)
+
+        # Further chunk if needed (for very long documents)
+        final_chunks = DocumentService._chunk_text(
+            content_text,
+            doc.filename,
+            doc.file_type,
+            kb_chunk_size,
+            kb_chunk_overlap,
+        )
+
+        return final_chunks, content_text
+
+    @staticmethod
     def parse_and_index_sync(db: Session, document_id: int) -> None:
         """
         Parse document, chunk, embed, upsert to vector store; update doc status.
@@ -53,31 +193,52 @@ class DocumentService:
         doc = DocumentService.get_by_id(db, document_id)
         if doc is None:
             return
+
+        # B3.2: 获取 KB 级分块配置
+        kb = db.execute(
+            select(KnowledgeBase).where(KnowledgeBase.id == doc.knowledge_base_id)
+        ).scalar_one_or_none()
+        kb_chunk_size = kb.chunk_size if kb else None
+        kb_chunk_overlap = kb.chunk_overlap if kb else None
+
         if doc.file_type == "url":
             from app.document_parser.url_parser import UrlParser
-            parsed_text = UrlParser().parse_url(doc.file_path)
-            doc.content_text = parsed_text
-            doc.status = "parsed"
-            doc.parser_message = "抓取成功"
-            chunks = DocumentService._chunker.chunk(parsed_text)
-            if chunks:
-                embeddings = DocumentService._embedding_service.embed(chunks)
-                ok, err = DocumentService._vector_store.upsert_document_chunks(
-                    knowledge_base_id=doc.knowledge_base_id,
-                    document_id=doc.id,
-                    chunks=chunks,
-                    embeddings=embeddings,
+            parser = UrlParser()
+            contents = parser.parse_url(doc.file_path)
+            # URL parser returns list[ParsedContent]
+            doc.status = "parsing"
+            doc.parser_message = "抓取中"
+            db.add(doc)
+            db.commit()
+            try:
+                chunks, content_text = DocumentService._process_parsed_contents(
+                    contents, doc, kb_chunk_size, kb_chunk_overlap
                 )
-                if ok:
-                    doc.status = "vectorized"
-                    doc.parser_message = f"抓取成功，分块 {len(chunks)}，向量化完成"
+                doc.content_text = content_text
+                if chunks:
+                    embeddings = DocumentService._embedding_service.embed(chunks)
+                    ok, err = DocumentService._vector_store.upsert_document_chunks(
+                        knowledge_base_id=doc.knowledge_base_id,
+                        document_id=doc.id,
+                        chunks=chunks,
+                        embeddings=embeddings,
+                    )
+                    if ok:
+                        doc.status = "vectorized"
+                        doc.parser_message = f"抓取成功，分块 {len(chunks)}，向量化完成"
+                    else:
+                        doc.status = "parsed"
+                        doc.parser_message = f"抓取成功，向量化跳过: {err}"
                 else:
-                    doc.parser_message = f"抓取成功，向量化跳过: {err}"
-            else:
-                doc.parser_message = "抓取成功，但未生成有效分块"
+                    doc.status = "parsed"
+                    doc.parser_message = "抓取成功，但未生成有效分块"
+            except Exception as exc:
+                doc.status = "parse_failed"
+                doc.parser_message = f"抓取失败: {exc}"
             db.add(doc)
             db.commit()
             return
+
         path = Path(doc.file_path)
         if not path.exists():
             doc.status = "parse_failed"
@@ -102,11 +263,13 @@ class DocumentService:
             db.refresh(doc)
             return
         try:
-            parsed_text = parser.parse(path)
-            doc.content_text = parsed_text
+            # New interface: parse() returns list[ParsedContent]
+            contents = parser.parse(path)
+            chunks, content_text = DocumentService._process_parsed_contents(
+                contents, doc, kb_chunk_size, kb_chunk_overlap
+            )
+            doc.content_text = content_text
             doc.status = "parsed"
-            doc.parser_message = "解析成功"
-            chunks = DocumentService._chunker.chunk(parsed_text)
             if chunks:
                 embeddings = DocumentService._embedding_service.embed(chunks)
                 ok, err = DocumentService._vector_store.upsert_document_chunks(
@@ -258,6 +421,17 @@ class DocumentService:
         if doc is None:
             return None, "文档不存在"
 
+        # URL 文档：file_path 存的是 URL 字符串，不入本地路径判断，直接入队
+        if getattr(doc, "file_type", None) == "url":
+            from app.tasks.document_tasks import parse_and_index
+            doc.status = "parsing"
+            doc.parser_message = "已入队，等待重新解析"
+            db.add(doc)
+            db.commit()
+            db.refresh(doc)
+            parse_and_index.delay(document_id)
+            return doc, None
+
         path = Path(doc.file_path)
         if not path.exists():
             return None, "文件不存在"
@@ -273,11 +447,13 @@ class DocumentService:
             return doc, None
 
         try:
-            parsed_text = parser.parse(path)
-            doc.content_text = parsed_text
+            # New interface: parse() returns list[ParsedContent]
+            contents = parser.parse(path)
+            chunks, content_text = DocumentService._process_parsed_contents(
+                contents, doc, None, None
+            )
+            doc.content_text = content_text
             doc.status = "parsed"
-            doc.parser_message = "解析成功"
-            chunks = DocumentService._chunker.chunk(parsed_text)
             if chunks:
                 embeddings = DocumentService._embedding_service.embed(chunks)
                 ok, err = DocumentService._vector_store.upsert_document_chunks(
@@ -373,7 +549,7 @@ class DocumentService:
 
         # 3. 为新当前版本重新生成向量（如果有解析内容）
         if target_doc.content_text:
-            chunks = DocumentService._chunker.chunk(target_doc.content_text)
+            chunks = DocumentService._chunk_text(target_doc.content_text, target_doc.filename, target_doc.file_type)
             if chunks:
                 embeddings = DocumentService._embedding_service.embed(chunks)
                 ok, err = DocumentService._vector_store.upsert_document_chunks(
@@ -393,4 +569,3 @@ class DocumentService:
         db.commit()
         db.refresh(target_doc)
         return target_doc, None
-

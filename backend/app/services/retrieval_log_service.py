@@ -340,12 +340,12 @@ class RetrievalLogService:
 
         return {
             "total_queries": total_queries,
-            "avg_top_score": round(avg_top_score, 4) if avg_top_score else None,
-            "avg_chunks_returned": round(avg_chunks, 2) if avg_chunks else None,
-            "avg_response_time_ms": round(avg_total_time, 2) if avg_total_time else None,
+            "avg_top_score": float(round(avg_top_score, 4)) if avg_top_score is not None else None,
+            "avg_chunks_returned": float(round(avg_chunks, 2)) if avg_chunks is not None else None,
+            "avg_response_time_ms": float(round(avg_total_time, 2)) if avg_total_time is not None else None,
             "helpful_count": helpful_count,
             "not_helpful_count": not_helpful_count,
-            "not_helpful_ratio": round(not_helpful_ratio, 2),
+            "not_helpful_ratio": float(round(not_helpful_ratio, 2)),
             "sample_count": sample_count,
         }
 
@@ -381,8 +381,8 @@ class RetrievalLogService:
             {
                 "knowledge_base_id": row.knowledge_base_id,
                 "query_count": row.query_count,
-                "avg_score": round(row.avg_score, 4) if row.avg_score else None,
-                "avg_time_ms": round(row.avg_time, 2) if row.avg_time else None,
+                "avg_score": float(round(row.avg_score, 4)) if row.avg_score is not None else None,
+                "avg_time_ms": float(round(row.avg_time, 2)) if row.avg_time is not None else None,
             }
             for row in results
         ]
@@ -417,7 +417,7 @@ class RetrievalLogService:
             {
                 "date": str(row.date),
                 "query_count": row.query_count,
-                "avg_score": round(row.avg_score, 4) if row.avg_score else None,
+                "avg_score": float(round(row.avg_score, 4)) if row.avg_score is not None else None,
             }
             for row in results
         ]

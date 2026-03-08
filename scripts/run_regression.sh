@@ -59,7 +59,7 @@ health_check() {
     log_info "Running health checks..."
     
     # Backend health
-    if curl -sf http://localhost:8000/api/health > /dev/null; then
+    if curl -sf http://localhost:8000/api/system/health > /dev/null; then
         log_info "Backend: OK"
     else
         log_error "Backend: FAILED"

@@ -81,7 +81,7 @@ class CitationVerifier:
         )
 
     def _extract_sentence_with_citation(self, answer: str, citation: str) -> str | None:
-        """提取包含引用的句子."""
+        """提取包含引用的句子（不包含引用标记）."""
         idx = answer.find(citation)
         if idx == -1:
             return None
@@ -96,7 +96,11 @@ class CitationVerifier:
         while start > 0 and not any(answer[start-1] in "。！？.!?\n"):
             start -= 1
 
-        return answer[start:end].strip()
+        # 提取句子并移除引用标记
+        sentence_with_citation = answer[start:end].strip()
+        # 从句子中移除引用标记，只保留内容
+        sentence_without_citation = sentence_with_citation.replace(citation, "").strip()
+        return sentence_without_citation
 
     def _check_support(self, sentence: str, chunks: list, cid: int) -> bool:
         """检查句子是否被 chunk 支持."""

@@ -1,19 +1,23 @@
 ---
 name: finishing-a-development-branch
 description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
+description_zh: 当实现完成、所有测试通过且需决定如何集成时使用 — 通过呈现合并、PR 或清理的结构化选项指导开发完成
 ---
 
-# Finishing a Development Branch
+# Finishing a Development Branch / 完成开发分支
 
-## Overview
+## Overview / 概述
 
 Guide completion of development work by presenting clear options and handling chosen workflow.
+通过呈现清晰选项并执行所选工作流来指导开发完成。
 
 **Core principle:** Verify tests → Present options → Execute choice → Clean up.
+**核心原则：** 验证测试 → 呈现选项 → 执行选择 → 清理。
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
+**开始时宣布：** "我正使用 finishing-a-development-branch 技能完成此工作。"
 
-## The Process
+## The Process / 流程
 
 ### Step 1: Verify Tests
 

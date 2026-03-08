@@ -1,9 +1,10 @@
 ---
 name: cpp-testing
 description: Use only when writing/updating/fixing C++ tests, configuring GoogleTest/CTest, diagnosing failing or flaky tests, or adding coverage/sanitizers.
+description_zh: 仅在编写/更新/修复 C++ 测试、配置 GoogleTest/CTest、诊断失败或不稳定测试或添加覆盖率/ sanitizer 时使用。
 ---
 
-# C++ Testing (Agent Skill)
+# C++ Testing (Agent Skill) / C++ 测试（代理技能）
 
 Agent-focused testing workflow for modern C++ (C++17/20) using GoogleTest/GoogleMock with CMake/CTest.
 

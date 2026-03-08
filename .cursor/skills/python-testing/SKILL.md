@@ -1,20 +1,21 @@
 ---
 name: python-testing
 description: Python testing strategies using pytest, TDD methodology, fixtures, mocking, parametrization, and coverage requirements.
+description_zh: 使用 pytest、TDD 方法、fixture、mock、参数化与覆盖率要求的 Python 测试策略。
 ---
 
-# Python Testing Patterns
+# Python Testing Patterns / Python 测试模式
 
 Comprehensive testing strategies for Python applications using pytest, TDD methodology, and best practices.
 
-## When to Activate
+## When to Activate / 激活时机
 
 - Writing new Python code (follow TDD: red, green, refactor)
 - Designing test suites for Python projects
 - Reviewing Python test coverage
 - Setting up testing infrastructure
 
-## Core Testing Philosophy
+## Core Testing Philosophy / 核心测试理念
 
 ### Test-Driven Development (TDD)
 

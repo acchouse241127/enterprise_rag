@@ -1,0 +1,140 @@
+# Evaluation QA Set for Retrieval Quality Assessment
+#
+# Format:
+#   id: Unique identifier
+#   question: User question
+#   expected_chunk_ids: List of correct chunk IDs (manual annotation required)
+#   knowledge_base_id: Knowledge base to query (optional, defaults to 1)
+#   category: Question type for analysis (optional)
+#
+# Usage:
+#   python scripts/eval_retrieval.py --qa-set tests/fixtures/eval_qa_set.yaml
+
+# Category: Authentication
+- id: auth_001
+  question: "How to set up two-factor authentication?"
+  expected_chunk_ids: []  # TODO: Annotate after reviewing knowledge base
+  knowledge_base_id: 1
+  category: "Authentication"
+
+- id: auth_002
+  question: "What is the default admin password?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Authentication"
+
+# Category: Document Management
+- id: doc_001
+  question: "What file formats are supported for document upload?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Document Management"
+
+- id: doc_002
+  question: "What is the maximum file size for uploads?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Document Management"
+
+- id: doc_003
+  question: "How to re-parse a document?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Document Management"
+
+# Category: Knowledge Base
+- id: kb_001
+  question: "How to create a new knowledge base?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Knowledge Base"
+
+- id: kb_002
+  question: "What is the difference between chunk strategies?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Knowledge Base"
+
+# Category: QA/Retrieval
+- id: qa_001
+  question: "What is RAG?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "QA/Retrieval"
+
+- id: qa_002
+  question: "How does retrieval strategy work?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "QA/Retrieval"
+
+- id: qa_003
+  question: "What is hybrid retrieval?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "QA/Retrieval"
+
+# Category: Configuration
+- id: cfg_001
+  question: "How to configure LLM provider?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Configuration"
+
+- id: cfg_002
+  question: "How to change embedding model?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Configuration"
+
+# Category: Security
+- id: sec_001
+  question: "How are user passwords stored?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Security"
+
+- id: sec_002
+  question: "What is JWT?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Security"
+
+# Category: Testing
+- id: test_001
+  question: "How to run unit tests?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Testing"
+
+- id: test_002
+  question: "How to run integration tests?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Testing"
+
+# Category: Deployment
+- id: dep_001
+  question: "How to deploy with Docker?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Deployment"
+
+- id: dep_002
+  question: "What are the environment variables required?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Deployment"
+
+# Category: Monitoring
+- id: mon_001
+  question: "How to monitor system performance?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Monitoring"
+
+- id: mon_002
+  question: "What metrics are tracked?"
+  expected_chunk_ids: []
+  knowledge_base_id: 1
+  category: "Monitoring"

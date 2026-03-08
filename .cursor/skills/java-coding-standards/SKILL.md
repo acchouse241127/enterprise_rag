@@ -1,13 +1,14 @@
 ---
 name: java-coding-standards
 description: "Java coding standards for Spring Boot services: naming, immutability, Optional usage, streams, exceptions, generics, and project layout."
+description_zh: Spring Boot 服务的 Java 编码标准：命名、不可变性、Optional 用法、流、异常、泛型与项目结构。
 ---
 
-# Java Coding Standards
+# Java Coding Standards / Java 编码标准
 
 Standards for readable, maintainable Java (17+) code in Spring Boot services.
 
-## Core Principles
+## Core Principles / 核心原则
 
 - Prefer clarity over cleverness
 - Immutable by default; minimize shared mutable state

@@ -6,13 +6,9 @@ from unittest.mock import MagicMock, patch, AsyncMock
 pytestmark = pytest.mark.integration
 
 def test_hybrid_retrieval_pipeline_flow():
-    "
-Test
-hybrid
-retrieval
-pipeline
-end-to-end
-flow."
+    """
+    Test hybrid retrieval pipeline end-to-end flow.
+    """
     # Mock all dependencies
     mock_bm25 = MagicMock()
     mock_bm25.search.return_value = ([MagicMock(id=1, content='test', score=0.9)], None)
@@ -21,12 +17,9 @@ flow."
     assert mock_bm25 is not None
 
 def test_verify_pipeline_flow():
-    "
-Test
-verification
-pipeline
-end-to-end
-flow."
+    """
+    Test verification pipeline end-to-end flow.
+    """
     from app.verify.verify_pipeline import VerifyPipeline, VerificationAction
     mock_nli = MagicMock()
     mock_nli.detect.return_value = MagicMock(faithfulness_score=0.9)

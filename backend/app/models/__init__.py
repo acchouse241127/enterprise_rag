@@ -7,6 +7,11 @@ from .folder_sync import FolderSyncConfig, FolderSyncLog, SyncStatus
 from .retrieval_log import RetrievalLog, RetrievalFeedback, FeedbackType
 from .async_task import AsyncTask, TaskStatus, TaskType
 from .conversation import Conversation, ConversationMessage
+# 算法优化 (2026-03-03)
+from .pii_rule import PiiRule
+from .forbidden_word import ForbiddenWord
+from .chunk import Chunk
+from .splade_embedding import SpladeEmbedding
 
 __all__ = [
     "User",
@@ -27,5 +32,10 @@ __all__ = [
     "TaskType",
     "Conversation",
     "ConversationMessage",
+    # 算法优化 (2026-03-03)
+    "PiiRule",
+    "ForbiddenWord",
+    "Chunk",
+    "SpladeEmbedding",
 ]
 

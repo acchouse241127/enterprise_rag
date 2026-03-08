@@ -1,11 +1,12 @@
 ---
 name: systematic-debugging
 description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+description_zh: 遇到任何 bug、测试失败或意外行为时、在提出修复前使用
 ---
 
-# Systematic Debugging
+# Systematic Debugging / 系统性调试
 
-## Overview
+## Overview / 概述
 
 Random fixes waste time and create new bugs. Quick patches mask underlying issues.
 
@@ -13,7 +14,7 @@ Random fixes waste time and create new bugs. Quick patches mask underlying issue
 
 **Violating the letter of this process is violating the spirit of debugging.**
 
-## The Iron Law
+## The Iron Law / 铁律
 
 ```
 NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
@@ -21,7 +22,7 @@ NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 
 If you haven't completed Phase 1, you cannot propose fixes.
 
-## When to Use
+## When to Use / 使用时机
 
 Use for ANY technical issue:
 - Test failures
@@ -43,7 +44,7 @@ Use for ANY technical issue:
 - You're in a hurry (rushing guarantees rework)
 - Manager wants it fixed NOW (systematic is faster than thrashing)
 
-## The Four Phases
+## The Four Phases / 四阶段
 
 You MUST complete each phase before proceeding to the next.
 

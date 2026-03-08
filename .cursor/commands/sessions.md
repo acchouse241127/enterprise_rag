@@ -1,12 +1,12 @@
-# Sessions Command
+# Sessions Command / 会话命令
 
 Manage Claude Code session history - list, load, alias, and edit sessions stored in `~/.claude/sessions/`.
 
-## Usage
+## Usage / 用法
 
 `/sessions [list|load|alias|info|help] [options]`
 
-## Actions
+## Actions / 操作
 
 ### List Sessions
 
@@ -260,7 +260,7 @@ if (aliases.length === 0) {
 "
 ```
 
-## Arguments
+## Arguments / 参数
 
 $ARGUMENTS:
 - `list [options]` - List sessions
@@ -275,7 +275,7 @@ $ARGUMENTS:
 - `aliases` - List all aliases
 - `help` - Show this help
 
-## Examples
+## Examples / 示例
 
 ```bash
 # List all sessions
@@ -297,7 +297,7 @@ $ARGUMENTS:
 /sessions aliases
 ```
 
-## Notes
+## Notes / 说明
 
 - Sessions are stored as markdown files in `~/.claude/sessions/`
 - Aliases are stored in `~/.claude/session-aliases.json`

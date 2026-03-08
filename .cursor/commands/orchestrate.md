@@ -1,12 +1,12 @@
-# Orchestrate Command
+# Orchestrate Command / 编排命令
 
 Sequential agent workflow for complex tasks.
 
-## Usage
+## Usage / 用法
 
 `/orchestrate [workflow-type] [task-description]`
 
-## Workflow Types
+## Workflow Types / 工作流类型
 
 ### feature
 Full feature implementation workflow:
@@ -32,7 +32,7 @@ Security-focused review:
 security-reviewer -> code-reviewer -> architect
 ```
 
-## Execution Pattern
+## Execution Pattern / 执行模式
 
 For each agent in the workflow:
 
@@ -41,7 +41,7 @@ For each agent in the workflow:
 3. **Pass to next agent** in chain
 4. **Aggregate results** into final report
 
-## Handoff Document Format
+## Handoff Document Format / 交接文档格式
 
 Between agents, create handoff document:
 
@@ -64,7 +64,7 @@ Between agents, create handoff document:
 [Suggested next steps]
 ```
 
-## Example: Feature Workflow
+## Example: Feature Workflow / 示例：功能工作流
 
 ```
 /orchestrate feature "Add user authentication"
@@ -96,7 +96,7 @@ Executes:
    - Final approval
    - Output: Final Report
 
-## Final Report Format
+## Final Report Format / 最终报告格式
 
 ```
 ORCHESTRATION REPORT
@@ -133,7 +133,7 @@ RECOMMENDATION
 [SHIP / NEEDS WORK / BLOCKED]
 ```
 
-## Parallel Execution
+## Parallel Execution / 并行执行
 
 For independent checks, run agents in parallel:
 
@@ -148,7 +148,7 @@ Run simultaneously:
 Combine outputs into single report
 ```
 
-## Arguments
+## Arguments / 参数
 
 $ARGUMENTS:
 - `feature <description>` - Full feature workflow
@@ -157,13 +157,13 @@ $ARGUMENTS:
 - `security <description>` - Security review workflow
 - `custom <agents> <description>` - Custom agent sequence
 
-## Custom Workflow Example
+## Custom Workflow Example / 自定义工作流示例
 
 ```
 /orchestrate custom "architect,tdd-guide,code-reviewer" "Redesign caching layer"
 ```
 
-## Tips
+## Tips / 提示
 
 1. **Start with planner** for complex features
 2. **Always include code-reviewer** before merge

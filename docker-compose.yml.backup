@@ -1,0 +1,182 @@
+services:
+  # ===========================================
+  # 基础服务（数据库）
+  # ===========================================
+  postgres:
+    image: enterprise_rag_postgres:pg_jieba
+    container_name: enterprise_rag_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-enterprise_rag}
+      POSTGRES_USER: ${POSTGRES_USER:-enterprise_rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enterprise_rag}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-enterprise_rag} -d ${POSTGRES_DB:-enterprise_rag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag_network
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: enterprise_rag_chromadb
+    restart: unless-stopped
+    ports:
+      - "${CHROMA_PORT:-8001}:8000"
+    volumes:
+      - ./data/vectors:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    # 新版 Chroma 镜像健康检查接口可能变化，暂禁用以免阻塞 backend 启动
+    healthcheck:
+      disable: true
+    networks:
+      - rag_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: enterprise_rag_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  # ===========================================
+  # 应用服务（代码挂载：本地改动自动同步到容器，无需重建镜像）
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/app/data/uploads
+      - ./data/models:/app/data/models
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    # 环境在「容器启动时」从宿主机 .env 注入，改 .env 后重新 up 即可生效
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-enterprise_rag}
+      - POSTGRES_USER=${POSTGRES_USER:-enterprise_rag}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-enterprise_rag}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-please-change-me-in-production}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.moonshot.cn/v1}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-kimi-k2.5}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-1}
+      - RERANKER_ENABLED=${RERANKER_ENABLED:-true}
+      - RERANKER_CANDIDATE_K=${RERANKER_CANDIDATE_K:-12}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - UPLOAD_ROOT_DIR=/app/data/uploads
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - TZ=Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  # React SPA 前端（主入口）
+  # 挂载 dist + nginx.conf：改前端代码执行 npm run build、改 nginx 配置改本文件，再 restart spa 即可生效，无需重建镜像
+  spa:
+    build:
+      context: ./frontend_spa
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_spa
+    restart: unless-stopped
+    ports:
+      - "${SPA_PORT:-3000}:80"
+    volumes:
+      - ./frontend_spa/dist:/usr/share/nginx/html
+      - ./frontend_spa/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: enterprise_rag_worker
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/app/data/uploads
+      - ./data/models:/app/data/models
+    command: ["/bin/bash", "-c", "pip install --quiet tiktoken 2>/dev/null || true && exec celery -A app.core.celery_app worker --loglevel=info"]
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-enterprise_rag}
+      - POSTGRES_USER=${POSTGRES_USER:-enterprise_rag}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-enterprise_rag}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - UPLOAD_ROOT_DIR=/app/data/uploads
+      - TZ=Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - rag_network
+    profiles:
+      - full
+
+networks:
+  rag_network:
+    driver: bridge
+  jaeger:
+    driver: bridge
+
+services:

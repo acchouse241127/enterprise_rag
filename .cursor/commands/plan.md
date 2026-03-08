@@ -1,12 +1,14 @@
 ---
 description: Restate requirements, assess risks, and create step-by-step implementation plan. WAIT for user CONFIRM before touching any code.
+description_zh: 复述需求、评估风险并创建分步实现计划。在接触任何代码前等待用户确认。
 ---
 
-# Plan Command
+# Plan Command / 计划命令
 
 This command invokes the **planner** agent to create a comprehensive implementation plan before writing any code.
+本命令调用 **planner** 代理，在写代码前创建全面的实现计划。
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Restate Requirements** - Clarify what needs to be built
 2. **Identify Risks** - Surface potential issues and blockers

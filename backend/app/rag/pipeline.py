@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from typing import Any
 
+from app.constants import (
+    CITATION_SIMILARITY_THRESHOLD,
+    CITATION_SNIPPET_MAX_LENGTH,
+)
 from app.llm import ChatMessage
 from app.rag.embedding import BgeM3EmbeddingService
 from app.rag.prompts import get_system_prompt
 from app.rag.retriever import VectorRetriever
+
+logger = logging.getLogger(__name__)
 
 
 class RagPipeline:
@@ -44,7 +51,7 @@ class RagPipeline:
 
     def _split_sentences(self, text: str) -> list[str]:
         # Keep punctuation with sentence so citation can be inserted before it.
-        parts = re.split(r"(?<=[。！？!?\.])\s*", text.strip())
+        parts = re.split(r"(?<=[。！？!?\\.])\s*", text.strip())
         return [p for p in parts if p]
 
     def _cosine(self, a: list[float], b: list[float]) -> float:
@@ -57,11 +64,62 @@ class RagPipeline:
             return 0.0
         return dot / (na * nb)
 
+    def _extract_snippet(
+        self,
+        content: str,
+        query_vector: list[float],
+        max_length: int = CITATION_SNIPPET_MAX_LENGTH,
+    ) -> str:
+        """
+        Extract the most relevant snippet from content based on query similarity.
+
+        Splits content into sentences/segments and finds the one most similar to the query.
+        """
+        if not content or not query_vector:
+            return content[:max_length].strip() if content else ""
+
+        # Split into sentences/segments
+        segments = re.split(r"(?<=[。！？!?\n])\s*", content)
+        segments = [s.strip() for s in segments if s.strip()]
+
+        if not segments:
+            return content[:max_length].strip()
+
+        if len(segments) == 1:
+            return segments[0][:max_length].strip()
+
+        # Find the most similar segment
+        try:
+            segment_vectors = self.embedding_service.embed(segments)
+            best_idx = 0
+            best_score = -1
+            for i, seg_vec in enumerate(segment_vectors):
+                score = self._cosine(query_vector, seg_vec)
+                if score > best_score:
+                    best_score = score
+                    best_idx = i
+
+            snippet = segments[best_idx]
+            if len(snippet) > max_length:
+                # Try to find a good cutoff point
+                cutoff = max_length
+                for punct in ["。", "！", "？", "，", ",", ".", "!", "?"]:
+                    pos = snippet.rfind(punct, 0, max_length)
+                    if pos > max_length // 2:
+                        cutoff = pos + 1
+                        break
+                snippet = snippet[:cutoff].strip()
+            return snippet
+        except Exception as e:
+            logger.warning("Failed to extract snippet: %s", e)
+            return content[:max_length].strip()
+
     def insert_citations(
         self,
         answer: str,
         chunks: list[dict],
-        similarity_threshold: float = 0.58,
+        similarity_threshold: float = CITATION_SIMILARITY_THRESHOLD,
+        query: str | None = None,
     ) -> tuple[str, list[dict[str, Any]]]:
         """Insert inline [ID:x] citations based on sentence-chunk similarity."""
         if not answer.strip() or not chunks:
@@ -71,6 +129,14 @@ class RagPipeline:
         chunk_vectors = self.embedding_service.embed(chunk_texts)
         sentences = self._split_sentences(answer)
         sentence_vectors = self.embedding_service.embed(sentences)
+
+        # Get query vector for snippet extraction
+        query_vector = None
+        if query:
+            try:
+                query_vector = self.embedding_service.embed([query])[0]
+            except Exception:
+                pass
 
         used_ids: set[int] = set()
         cited_sentences: list[str] = []
@@ -85,8 +151,8 @@ class RagPipeline:
                 cited_sentences.append(sentence)
                 continue
             used_ids.add(best_id)
-            if re.search(r"[。！？!?\.]$", sentence):
-                cited = re.sub(r"([。！？!?\.])$", f" [ID:{best_id}]\\1", sentence)
+            if re.search(r"[。！？!?\\.]$", sentence):
+                cited = re.sub(r"([。！？!?\\.])$", f" [ID:{best_id}]\\1", sentence)
             else:
                 cited = sentence + f" [ID:{best_id}]"
             cited_sentences.append(cited)
@@ -96,6 +162,10 @@ class RagPipeline:
             chunk = chunks[idx]
             md = chunk.get("metadata") or {}
             content = str(chunk.get("content", ""))
+
+            # Extract snippet from chunk content
+            snippet = self._extract_snippet(content, query_vector) if query_vector else content[:150]
+
             citations.append(
                 {
                     "id": idx,
@@ -103,7 +173,8 @@ class RagPipeline:
                     "document_id": md.get("document_id"),
                     "chunk_index": md.get("chunk_index"),
                     "content_preview": content[:200],
-                    "reason": content[:150].strip() or "与问题相关",
+                    "snippet": snippet,
+                    "reason": snippet[:100].strip() or "与问题相关",
                 }
             )
         return " ".join(cited_sentences).strip(), citations

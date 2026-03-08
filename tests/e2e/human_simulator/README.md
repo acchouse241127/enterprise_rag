@@ -13,7 +13,7 @@ playwright install chromium
 ## 运行前
 
 1. 启动后端：`cd backend && uvicorn main:app --host 0.0.0.0 --port 8000`
-2. 启动前端：`cd frontend && streamlit run 系统介绍.py --server.port 8501`
+2. 启动前端：`cd frontend_spa && npm run dev`
 3. 确保 Postgres、ChromaDB 已启动，并执行 `init_db.py` 创建测试账号
 
 ## 运行
@@ -26,7 +26,7 @@ python human_simulator.py
 python human_simulator.py --headless
 
 # 指定 URL 和报告路径
-python human_simulator.py --url http://localhost:8501 --output ./report.json
+python human_simulator.py --url http://localhost:3000 --output ./report.json
 ```
 
 ## 输出

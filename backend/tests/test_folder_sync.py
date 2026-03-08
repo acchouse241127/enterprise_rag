@@ -9,12 +9,10 @@ Date: 2026-02-13
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-from sqlalchemy.orm import Session
 
-from app.models import FolderSyncConfig, SyncStatus
+from app.models import SyncStatus
 
 
 class TestFolderSyncConfig:

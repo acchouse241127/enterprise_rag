@@ -1,15 +1,16 @@
 ---
 name: requesting-code-review
 description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description_zh: 完成任务、实现主要功能或合并前验证工作符合要求时使用
 ---
 
-# Requesting Code Review
+# Requesting Code Review / 请求代码审查
 
 Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
 
 **Core principle:** Review early, review often.
 
-## When to Request Review
+## When to Request Review / 何时请求审查
 
 **Mandatory:**
 - After each task in subagent-driven development
@@ -21,7 +22,7 @@ Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
 - Before refactoring (baseline check)
 - After fixing complex bug
 
-## How to Request
+## How to Request / 如何请求
 
 **1. Get git SHAs:**
 ```bash
@@ -46,7 +47,7 @@ Use Task tool with superpowers:code-reviewer type, fill template at `code-review
 - Note Minor issues for later
 - Push back if reviewer is wrong (with reasoning)
 
-## Example
+## Example / 示例
 
 ```
 [Just completed Task 2: Add verification function]

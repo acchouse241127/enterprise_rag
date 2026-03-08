@@ -37,8 +37,8 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "后端依赖已安装。" -ForegroundColor Green
 
 Write-Host "`n========== 4/5 安装前端依赖 ==========" -ForegroundColor Cyan
-Set-Location (Join-Path $ProjectRoot "frontend")
-pip install -r requirements.txt -q
+Set-Location (Join-Path $ProjectRoot "frontend_spa")
+npm install
 if ($LASTEXITCODE -ne 0) {
     Write-Host "前端依赖安装失败。" -ForegroundColor Red
     exit 1
@@ -57,6 +57,6 @@ Write-Host "数据库与测试账号已就绪（admin / password123，admin_totp
 Write-Host "`n========== 环境配置完成 ==========" -ForegroundColor Green
 Write-Host "后续可执行：" -ForegroundColor Cyan
 Write-Host "  启动后端: cd backend; `$env:PYTHONPATH='.'; uvicorn main:app --host 0.0.0.0 --port 8000" -ForegroundColor Gray
-Write-Host "  启动前端: cd frontend; streamlit run 系统介绍.py --server.port 8501" -ForegroundColor Gray
+Write-Host "  启动前端: cd frontend_spa; npm run dev" -ForegroundColor Gray
 Write-Host "  运行测试: cd backend; `$env:PYTHONPATH='.'; python -m pytest tests/ -v" -ForegroundColor Gray
 Set-Location $ProjectRoot

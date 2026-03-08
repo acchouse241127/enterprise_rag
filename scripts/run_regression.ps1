@@ -59,7 +59,7 @@ function Test-Health {
     
     # Backend health
     try {
-        $null = Invoke-RestMethod -Uri "http://localhost:8000/api/health" -TimeoutSec 10
+        $null = Invoke-RestMethod -Uri "http://localhost:8000/api/system/health" -TimeoutSec 10
         Write-Info "Backend: OK"
     } catch {
         Write-Err "Backend: FAILED"

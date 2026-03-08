@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-rag-backend
+  labels:
+    app: enterprise-rag-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: enterprise-rag-backend
+  template:
+    metadata:
+      labels:
+        app: enterprise-rag-backend
+    spec:
+      containers:
+      - name: backend
+        image: enterprise-rag-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: postgres-host
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: postgres-port
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: postgres-db
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: enterprise-rag-secrets
+              key: postgres-password
+        - name: CHROMA_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: chroma-host
+        - name: CHROMA_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: chroma-port
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: enterprise-rag-secrets
+              key: jwt-secret-key
+        - name: LLM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: enterprise-rag-secrets
+              key: llm-api-key
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: enterprise-rag-config
+              key: redis-url
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/data/uploads
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: enterprise-rag-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-rag-backend
+spec:
+  selector:
+    app: enterprise-rag-backend
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-rag-config
+data:
+  postgres-host: "postgres-service"
+  postgres-port: "5432"
+  postgres-db: "enterprise_rag"
+  postgres-user: "enterprise_rag"
+  chroma-host: "chromadb-service"
+  chroma-port: "8000"
+  redis-url: "redis://redis-service:6379/0"
+  log-level: "INFO"
+  cors-origins: "http://your-frontend-domain"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: enterprise-rag-uploads-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard

@@ -1,12 +1,13 @@
 ---
 description: Comprehensive Go code review for idiomatic patterns, concurrency safety, error handling, and security. Invokes the go-reviewer agent.
+description_zh: 全面的 Go 代码审查，涵盖地道模式、并发安全、错误处理与安全。调用 go-reviewer 代理。
 ---
 
-# Go Code Review
+# Go Code Review / Go 代码审查
 
 This command invokes the **go-reviewer** agent for comprehensive Go-specific code review.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Identify Go Changes**: Find modified `.go` files via `git diff`
 2. **Run Static Analysis**: Execute `go vet`, `staticcheck`, and `golangci-lint`
@@ -15,7 +16,7 @@ This command invokes the **go-reviewer** agent for comprehensive Go-specific cod
 5. **Idiomatic Go Check**: Verify code follows Go conventions and best practices
 6. **Generate Report**: Categorize issues by severity
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/go-review` when:
 - After writing or modifying Go code
@@ -24,7 +25,7 @@ Use `/go-review` when:
 - Onboarding to a new Go codebase
 - Learning idiomatic Go patterns
 
-## Review Categories
+## Review Categories / 审查类别
 
 ### CRITICAL (Must Fix)
 - SQL/Command injection vulnerabilities
@@ -49,7 +50,7 @@ Use `/go-review` when:
 - Slice not preallocated
 - Table-driven tests not used
 
-## Automated Checks Run
+## Automated Checks Run / 自动检查项
 
 ```bash
 # Static analysis
@@ -66,7 +67,7 @@ go build -race ./...
 govulncheck ./...
 ```
 
-## Example Usage
+## Example Usage / 示例用法
 
 ```text
 User: /go-review
@@ -127,7 +128,7 @@ return fmt.Errorf("get user %s: %w", userID, err)
 Recommendation: ❌ Block merge until CRITICAL issue is fixed
 ```
 
-## Approval Criteria
+## Approval Criteria / 通过标准
 
 | Status | Condition |
 |--------|-----------|
@@ -135,14 +136,14 @@ Recommendation: ❌ Block merge until CRITICAL issue is fixed
 | ⚠️ Warning | Only MEDIUM issues (merge with caution) |
 | ❌ Block | CRITICAL or HIGH issues found |
 
-## Integration with Other Commands
+## Integration with Other Commands / 与其他命令的集成
 
 - Use `/go-test` first to ensure tests pass
 - Use `/go-build` if build errors occur
 - Use `/go-review` before committing
 - Use `/code-review` for non-Go specific concerns
 
-## Related
+## Related / 相关
 
 - Agent: `agents/go-reviewer.md`
 - Skills: `skills/golang-patterns/`, `skills/golang-testing/`

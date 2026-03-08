@@ -1,17 +1,18 @@
 ---
 name: receiving-code-review
 description: Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation
+description_zh: 收到代码审查反馈时、在实施建议前使用，尤其当反馈不清晰或技术上存疑时——需要技术严谨与验证，非表面认同或盲目实施
 ---
 
-# Code Review Reception
+# Code Review Reception / 代码审查反馈处理
 
-## Overview
+## Overview / 概述
 
 Code review requires technical evaluation, not emotional performance.
 
 **Core principle:** Verify before implementing. Ask before assuming. Technical correctness over social comfort.
 
-## The Response Pattern
+## The Response Pattern / 响应模式
 
 ```
 WHEN receiving code review feedback:
@@ -24,7 +25,7 @@ WHEN receiving code review feedback:
 6. IMPLEMENT: One item at a time, test each
 ```
 
-## Forbidden Responses
+## Forbidden Responses / 禁止的回应
 
 **NEVER:**
 - "You're absolutely right!" (explicit CLAUDE.md violation)
@@ -37,7 +38,7 @@ WHEN receiving code review feedback:
 - Push back with technical reasoning if wrong
 - Just start working (actions > words)
 
-## Handling Unclear Feedback
+## Handling Unclear Feedback / 处理不清晰反馈
 
 ```
 IF any item is unclear:

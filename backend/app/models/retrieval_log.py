@@ -60,10 +60,15 @@ class RetrievalLog(Base):
         DateTime(timezone=False), nullable=False, server_default=func.now(), index=True
     )
     # V2.0: 质量指标
-    confidence_score: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
-    faithfulness_score: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
-    refusal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    confidence_score: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    confidence_level: Mapped[str | None] = mapped_column(String(20), nullable=True)  # high/medium/low/refused
+    faithfulness_score: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    has_hallucination: Mapped[bool] = mapped_column(Integer, nullable=False, default=False, server_default="0")
+    retrieval_mode: Mapped[str | None] = mapped_column(String(30), nullable=True, default="hybrid", server_default="hybrid")
+    refusal_reason: Mapped[str | None] = mapped_column(String(50), nullable=True)
     refusal_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    citation_accuracy: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    latency_breakdown: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     feedbacks = relationship("RetrievalFeedback", back_populates="retrieval_log", cascade="all, delete-orphan")

@@ -1,13 +1,14 @@
 ---
 name: springboot-verification
 description: "Verification loop for Spring Boot projects: build, static analysis, tests with coverage, security scans, and diff review before release or PR."
+description_zh: Spring Boot 项目验证循环：构建、静态分析、带覆盖的测试、安全扫描及发布或 PR 前 diff 审查。
 ---
 
-# Spring Boot Verification Loop
+# Spring Boot Verification Loop / Spring Boot 验证循环
 
 Run before PRs, after major changes, and pre-deploy.
 
-## Phase 1: Build
+## Phase 1: Build / 阶段 1：构建
 
 ```bash
 mvn -T 4 clean verify -DskipTests
@@ -17,7 +18,7 @@ mvn -T 4 clean verify -DskipTests
 
 If build fails, stop and fix.
 
-## Phase 2: Static Analysis
+## Phase 2: Static Analysis / 阶段 2：静态分析
 
 Maven (common plugins):
 ```bash

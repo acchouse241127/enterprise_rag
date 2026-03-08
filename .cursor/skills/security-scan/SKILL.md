@@ -1,13 +1,14 @@
 ---
 name: security-scan
 description: Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE.md, settings.json, MCP servers, hooks, and agent definitions.
+description_zh: 使用 AgentShield 扫描 Claude Code 配置（.claude/ 目录）中的安全漏洞、配置错误与注入风险。检查 CLAUDE.md、settings.json、MCP 服务器、钩子与代理定义。
 ---
 
-# Security Scan Skill
+# Security Scan Skill / 安全扫描技能
 
 Audit your Claude Code configuration for security issues using [AgentShield](https://github.com/affaan-m/agentshield).
 
-## When to Activate
+## When to Activate / 激活时机
 
 - Setting up a new Claude Code project
 - After modifying `.claude/settings.json`, `CLAUDE.md`, or MCP configs
@@ -15,7 +16,7 @@ Audit your Claude Code configuration for security issues using [AgentShield](htt
 - When onboarding to a new repository with existing Claude Code configs
 - Periodic security hygiene checks
 
-## What It Scans
+## What It Scans / 扫描内容
 
 | File | Checks |
 |------|--------|
@@ -25,7 +26,7 @@ Audit your Claude Code configuration for security issues using [AgentShield](htt
 | `hooks/` | Command injection via interpolation, data exfiltration, silent error suppression |
 | `agents/*.md` | Unrestricted tool access, prompt injection surface, missing model specs |
 
-## Prerequisites
+## Prerequisites / 前提条件
 
 AgentShield must be installed. Check and install if needed:
 
@@ -40,7 +41,7 @@ npm install -g ecc-agentshield
 npx ecc-agentshield scan .
 ```
 
-## Usage
+## Usage / 用法
 
 ### Basic Scan
 

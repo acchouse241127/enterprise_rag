@@ -7,7 +7,6 @@ Date: 2026-02-13
 """
 
 import hashlib
-import os
 import time
 from datetime import datetime
 from fnmatch import fnmatch
@@ -17,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import FolderSyncConfig, FolderSyncLog, SyncStatus, KnowledgeBase, Document
+from app.models import FolderSyncConfig, FolderSyncLog, SyncStatus, KnowledgeBase
 
 
 class FolderSyncService:

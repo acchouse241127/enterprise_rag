@@ -3,8 +3,10 @@ Structured logging configuration.
 
 Author: C2
 Date: 2026-02-13
+Updated: 2026-03-07 - Added JSON format support
 """
 
+import json
 import logging
 import sys
 from datetime import datetime, timezone
@@ -67,18 +69,61 @@ class StructuredFormatter(logging.Formatter):
         if hasattr(record, "duration_ms"):
             extra_parts.append(f"duration_ms={record.duration_ms}")
 
-        extra_str = " ".join(extra_parts)
+        extra_str = " | ".join(extra_parts)
         if extra_str:
             return f"[{timestamp}] [{level}] [{name}] {message} | {extra_str}"
         return f"[{timestamp}] [{level}] [{name}] {message}"
 
 
-def setup_logging(level: str = "INFO") -> None:
+class JsonFormatter(logging.Formatter):
+    """
+    JSON formatter for structured logging output.
+
+    Useful for log aggregation systems like ELK, Splunk.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format log record as JSON."""
+        log_entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "thread": record.thread,
+            "process": record.process,
+        }
+
+        # Add exception info if present
+        if record.exc_info:
+            log_entry["exception"] = {
+                "type": type(record.exc_info[1]).__name__,
+                "message": str(record.exc_info[1]),
+            }
+
+        # Add extra fields
+        extra = {}
+        for k, v in record.__dict__.items():
+            if k in ("name", "msg", "args", "created", "filename", "funcName",
+                    "levelname", "levelno", "lineno", "module", "msecs",
+                    "pathname", "process", "processName", "relativeCreated",
+                    "stack_info", "exc_info", "exc_text", "thread",
+                    "threadName", "message", "taskName"):
+                continue
+            if v is None or v == "":
+                continue
+            extra[k] = v
+
+        log_entry.update(extra)
+        return json.dumps(log_entry, ensure_ascii=False)
+
+
+def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
     """
     Configure application logging.
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        json_format: Whether to use JSON format (true) or text format (false)
     """
     # Root logger
     root_logger = logging.getLogger()
@@ -88,10 +133,17 @@ def setup_logging(level: str = "INFO") -> None:
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
 
-    # Console handler with structured format
+    # Console handler with appropriate formatter
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
-    console_handler.setFormatter(StructuredFormatter())
+
+    if json_format:
+        # Use JSON formatter for log aggregation systems
+        console_handler.setFormatter(JsonFormatter())
+    else:
+        # Use structured text formatter for development
+        console_handler.setFormatter(StructuredFormatter())
+
     root_logger.addHandler(console_handler)
 
     # Application logger

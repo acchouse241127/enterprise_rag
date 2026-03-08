@@ -1,13 +1,14 @@
 ---
 name: iterative-retrieval
 description: Pattern for progressively refining context retrieval to solve the subagent context problem
+description_zh: 逐步精炼上下文检索以解决子代理上下文问题的模式
 ---
 
-# Iterative Retrieval Pattern
+# Iterative Retrieval Pattern / 迭代检索模式
 
 Solves the "context problem" in multi-agent workflows where subagents don't know what context they need until they start working.
 
-## The Problem
+## The Problem / 问题
 
 Subagents are spawned with limited context. They don't know:
 - Which files contain relevant code
@@ -19,7 +20,7 @@ Standard approaches fail:
 - **Send nothing**: Agent lacks critical information
 - **Guess what's needed**: Often wrong
 
-## The Solution: Iterative Retrieval
+## The Solution: Iterative Retrieval / 解决方案：迭代检索
 
 A 4-phase loop that progressively refines context:
 

@@ -1,4 +1,4 @@
-# Plan - Multi-Model Collaborative Planning
+# Plan - Multi-Model Collaborative Planning / 计划 - 多模型协作规划
 
 Multi-model collaborative planning - Context retrieval + Dual-model analysis → Generate step-by-step implementation plan.
 
@@ -6,7 +6,7 @@ $ARGUMENTS
 
 ---
 
-## Core Protocols
+## Core Protocols / 核心协议
 
 - **Language Protocol**: Use **English** when interacting with tools/models, communicate with user in their language
 - **Mandatory Parallel**: Codex/Gemini calls MUST use `run_in_background: true` (including single model calls, to avoid blocking main thread)
@@ -16,7 +16,7 @@ $ARGUMENTS
 
 ---
 
-## Multi-Model Call Specification
+## Multi-Model Call Specification / 多模型调用规范
 
 **Call Syntax** (parallel: use `run_in_background: true`):
 
@@ -61,7 +61,7 @@ TaskOutput({ task_id: "<task_id>", block: true, timeout: 600000 })
 
 ---
 
-## Execution Workflow
+## Execution Workflow / 执行工作流
 
 **Planning Task**: $ARGUMENTS
 
@@ -220,7 +220,7 @@ Synthesize both analyses, generate **Step-by-step Implementation Plan**:
 
 ---
 
-## Plan Saving
+## Plan Saving / 计划保存
 
 After planning completes, save plan to:
 
@@ -231,7 +231,7 @@ Plan file write should complete before presenting plan to user.
 
 ---
 
-## Plan Modification Flow
+## Plan Modification Flow / 计划修改流程
 
 If user requests plan modifications:
 
@@ -242,7 +242,7 @@ If user requests plan modifications:
 
 ---
 
-## Next Steps
+## Next Steps / 下一步
 
 After user approves, **manually** execute:
 
@@ -252,7 +252,7 @@ After user approves, **manually** execute:
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. **Plan only, no implementation** – This command does not execute any code changes
 2. **No Y/N prompts** – Only present plan, let user decide next steps

@@ -1,13 +1,14 @@
 ---
 name: strategic-compact
 description: Suggests manual context compaction at logical intervals to preserve context through task phases rather than arbitrary auto-compaction.
+description_zh: 在逻辑节点建议手动上下文压缩，以在任务阶段间保留上下文，而非随意自动压缩。
 ---
 
-# Strategic Compact Skill
+# Strategic Compact Skill / 战略压缩技能
 
 Suggests manual `/compact` at strategic points in your workflow rather than relying on arbitrary auto-compaction.
 
-## Why Strategic Compaction?
+## Why Strategic Compaction? / 为何战略压缩？
 
 Auto-compaction triggers at arbitrary points:
 - Often mid-task, losing important context
@@ -19,7 +20,7 @@ Strategic compaction at logical boundaries:
 - **After completing a milestone** - Fresh start for next phase
 - **Before major context shifts** - Clear exploration context before different task
 
-## How It Works
+## How It Works / 工作原理
 
 The `suggest-compact.sh` script runs on PreToolUse (Edit/Write) and:
 
@@ -27,7 +28,7 @@ The `suggest-compact.sh` script runs on PreToolUse (Edit/Write) and:
 2. **Threshold detection** - Suggests at configurable threshold (default: 50 calls)
 3. **Periodic reminders** - Reminds every 25 calls after threshold
 
-## Hook Setup
+## Hook Setup / 钩子设置
 
 Add to your `~/.claude/settings.json`:
 

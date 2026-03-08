@@ -1,4 +1,4 @@
-# Execute - Multi-Model Collaborative Execution
+# Execute - Multi-Model Collaborative Execution / 执行 - 多模型协作执行
 
 Multi-model collaborative execution - Get prototype from plan → Claude refactors and implements → Multi-model audit and delivery.
 
@@ -6,7 +6,7 @@ $ARGUMENTS
 
 ---
 
-## Core Protocols
+## Core Protocols / 核心协议
 
 - **Language Protocol**: Use **English** when interacting with tools/models, communicate with user in their language
 - **Code Sovereignty**: External models have **zero filesystem write access**, all modifications by Claude
@@ -16,7 +16,7 @@ $ARGUMENTS
 
 ---
 
-## Multi-Model Call Specification
+## Multi-Model Call Specification / 多模型调用规范
 
 **Call Syntax** (parallel: use `run_in_background: true`):
 
@@ -102,7 +102,7 @@ TaskOutput({ task_id: "<task_id>", block: true, timeout: 600000 })
 
 ---
 
-## Execution Workflow
+## Execution Workflow / 执行工作流
 
 **Execute Task**: $ARGUMENTS
 
@@ -281,7 +281,7 @@ After audit passes, report to user:
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. **Code Sovereignty** – All file modifications by Claude, external models have zero write access
 2. **Dirty Prototype Refactoring** – Codex/Gemini output treated as draft, must refactor
@@ -291,7 +291,7 @@ After audit passes, report to user:
 
 ---
 
-## Usage
+## Usage / 用法
 
 ```bash
 # Execute plan file
@@ -303,7 +303,7 @@ After audit passes, report to user:
 
 ---
 
-## Relationship with /ccg:plan
+## Relationship with /ccg:plan / 与 /ccg:plan 的关系
 
 1. `/ccg:plan` generates plan + SESSION_ID
 2. User confirms with "Y"

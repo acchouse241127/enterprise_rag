@@ -1,10 +1,11 @@
 ---
 name: eval-harness
 description: Formal evaluation framework for Claude Code sessions implementing eval-driven development (EDD) principles
+description_zh: Claude Code 会话的正式评估框架，实现评估驱动开发 (EDD) 原则
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
-# Eval Harness Skill
+# Eval Harness Skill / 评估框架技能
 
 A formal evaluation framework for Claude Code sessions, implementing eval-driven development (EDD) principles.
 

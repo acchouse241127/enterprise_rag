@@ -2,7 +2,7 @@
 # Author: C2
 # Date: 2026-02-13
 
-FROM python:3.11-slim
+FROM docker.m.daocloud.io/library/python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -18,16 +18,20 @@ WORKDIR /app
 # - LibreOffice: for .doc/.ppt legacy format conversion (OPT-014)
 #   Version: uses Debian distro default (e.g. 25.2.3 on bookworm/trixie);
 #   to pin: apt-cache policy libreoffice-writer && add =<version> to package name
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    libpq-dev \
-    gcc \
-    libgl1 \
-    libgl1-mesa-dri \
-    libglib2.0-0 \
-    libreoffice-writer \
-    libreoffice-impress \
-    && rm -rf /var/lib/apt/lists/*
+# Added retry logic for network stability
+RUN apt-get update && \
+    for i in 1 2 3; do \
+        apt-get install -y --no-install-recommends --fix-missing \
+            curl \
+            libpq-dev \
+            gcc \
+            libgl1 \
+            libgl1-mesa-dri \
+            libglib2.0-0 \
+            libreoffice-writer \
+            libreoffice-impress && break || sleep 10; \
+    done && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .

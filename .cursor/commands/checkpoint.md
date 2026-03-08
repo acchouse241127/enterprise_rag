@@ -1,12 +1,12 @@
-# Checkpoint Command
+# Checkpoint Command / 检查点命令
 
 Create or verify a checkpoint in your workflow.
 
-## Usage
+## Usage / 用法
 
 `/checkpoint [create|verify|list] [name]`
 
-## Create Checkpoint
+## Create Checkpoint / 创建检查点
 
 When creating a checkpoint:
 
@@ -20,7 +20,7 @@ echo "$(date +%Y-%m-%d-%H:%M) | $CHECKPOINT_NAME | $(git rev-parse --short HEAD)
 
 4. Report checkpoint created
 
-## Verify Checkpoint
+## Verify Checkpoint / 验证检查点
 
 When verifying against a checkpoint:
 
@@ -41,7 +41,7 @@ Coverage: +X% / -Y%
 Build: [PASS/FAIL]
 ```
 
-## List Checkpoints
+## List Checkpoints / 列出检查点
 
 Show all checkpoints with:
 - Name
@@ -49,7 +49,7 @@ Show all checkpoints with:
 - Git SHA
 - Status (current, behind, ahead)
 
-## Workflow
+## Workflow / 工作流
 
 Typical checkpoint flow:
 
@@ -65,7 +65,7 @@ Typical checkpoint flow:
 [PR] --> /checkpoint verify "feature-start"
 ```
 
-## Arguments
+## Arguments / 参数
 
 $ARGUMENTS:
 - `create <name>` - Create named checkpoint

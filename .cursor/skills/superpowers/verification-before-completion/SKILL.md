@@ -1,11 +1,12 @@
 ---
 name: verification-before-completion
 description: Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always
+description_zh: 在声称工作完成、已修复或通过前使用，提交或创建 PR 前必须先运行验证命令并确认输出；证据优先于断言。
 ---
 
-# Verification Before Completion
+# Verification Before Completion / 完成前验证
 
-## Overview
+## Overview / 概述
 
 Claiming work is complete without verification is dishonesty, not efficiency.
 
@@ -13,7 +14,7 @@ Claiming work is complete without verification is dishonesty, not efficiency.
 
 **Violating the letter of this rule is violating the spirit of this rule.**
 
-## The Iron Law
+## The Iron Law / 铁律
 
 ```
 NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
@@ -21,7 +22,7 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
 If you haven't run the verification command in this message, you cannot claim it passes.
 
-## The Gate Function
+## The Gate Function / 关卡功能
 
 ```
 BEFORE claiming any status or expressing satisfaction:
@@ -37,7 +38,7 @@ BEFORE claiming any status or expressing satisfaction:
 Skip any step = lying, not verifying
 ```
 
-## Common Failures
+## Common Failures / 常见失败
 
 | Claim | Requires | Not Sufficient |
 |-------|----------|----------------|

@@ -68,7 +68,7 @@ def _convert(input_path: Path, target_ext: str) -> Path:
             )
         except subprocess.TimeoutExpired as e:
             raise RuntimeError(
-                f"LibreOffice 转换超时（120秒），请检查文件是否过大或损坏"
+                "LibreOffice 转换超时（120秒），请检查文件是否过大或损坏"
             ) from e
         except subprocess.CalledProcessError as e:
             raise RuntimeError(

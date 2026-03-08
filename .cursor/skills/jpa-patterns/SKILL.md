@@ -1,13 +1,14 @@
 ---
 name: jpa-patterns
 description: JPA/Hibernate patterns for entity design, relationships, query optimization, transactions, auditing, indexing, pagination, and pooling in Spring Boot.
+description_zh: Spring Boot 中 JPA/Hibernate 的实体设计、关系、查询优化、事务、审计、索引、分页与连接池模式。
 ---
 
-# JPA/Hibernate Patterns
+# JPA/Hibernate Patterns / JPA/Hibernate 模式
 
 Use for data modeling, repositories, and performance tuning in Spring Boot.
 
-## Entity Design
+## Entity Design / 实体设计
 
 ```java
 @Entity

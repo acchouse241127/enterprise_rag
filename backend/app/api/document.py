@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas import DocumentData
+from app.services.async_task_service import AsyncTaskService
 from app.services.document_service import DocumentService
-from app.tasks.document_tasks import parse_and_index
 
 router = APIRouter()
 
@@ -35,13 +35,18 @@ async def upload_document(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    """Upload a document and trigger base parsing."""
+    """Upload a document and trigger async parsing task."""
     doc, err = await DocumentService.upload(
         db=db, knowledge_base_id=knowledge_base_id, upload_file=file, created_by=current_user.id
     )
     if err is not None:
         return {"code": 1001, "message": "参数错误", "detail": err}
-    parse_and_index.delay(doc.id)
+    # 使用 AsyncTaskService 提交文档解析任务
+    AsyncTaskService.submit_document_parse_task(
+        document_id=doc.id,
+        filename=doc.filename,
+        created_by=current_user.id,
+    )
     return {
         "code": 0,
         "message": "success",
@@ -60,13 +65,18 @@ def create_document_from_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    """Create a document from URL; worker will fetch and index."""
+    """Create a document from URL; async task will fetch and index."""
     doc, err = DocumentService.create_from_url(
         db=db, knowledge_base_id=knowledge_base_id, url=body.url, created_by=current_user.id
     )
     if err is not None:
         return {"code": 1001, "message": "参数错误", "detail": err}
-    parse_and_index.delay(doc.id)
+    # 使用 AsyncTaskService 提交文档解析任务
+    AsyncTaskService.submit_document_parse_task(
+        document_id=doc.id,
+        filename=doc.filename,
+        created_by=current_user.id,
+    )
     return {
         "code": 0,
         "message": "success",
@@ -92,7 +102,12 @@ async def batch_upload_documents(
             db=db, knowledge_base_id=knowledge_base_id, upload_file=item, created_by=current_user.id
         )
         if err is None and doc is not None:
-            parse_and_index.delay(doc.id)
+            # 使用 AsyncTaskService 提交文档解析任务
+            AsyncTaskService.submit_document_parse_task(
+                document_id=doc.id,
+                filename=doc.filename,
+                created_by=current_user.id,
+            )
             success_items.append(DocumentData.model_validate(doc).model_dump(mode="json"))
         else:
             failed_items.append({"filename": item.filename, "error": err or "上传失败"})

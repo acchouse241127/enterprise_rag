@@ -1,11 +1,12 @@
 ---
 name: writing-skills
 description: Use when creating new skills, editing existing skills, or verifying skills work before deployment
+description_zh: 创建新技能、编辑现有技能或部署前验证技能时使用
 ---
 
-# Writing Skills
+# Writing Skills / 编写技能
 
-## Overview
+## Overview / 概述
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
@@ -19,7 +20,7 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **Official guidance:** For Anthropic's official skill authoring best practices, see anthropic-best-practices.md. This document provides additional patterns and guidelines that complement the TDD-focused approach in this skill.
 
-## What is a Skill?
+## What is a Skill? / 什么是技能？
 
 A **skill** is a reference guide for proven techniques, patterns, or tools. Skills help future Claude instances find and apply effective approaches.
 
@@ -27,7 +28,7 @@ A **skill** is a reference guide for proven techniques, patterns, or tools. Skil
 
 **Skills are NOT:** Narratives about how you solved a problem once
 
-## TDD Mapping for Skills
+## TDD Mapping for Skills / 技能的 TDD 映射
 
 | TDD Concept | Skill Creation |
 |-------------|----------------|

@@ -1,9 +1,10 @@
 ---
 name: golang-testing
 description: Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.
+description_zh: Go 测试模式：表驱动测试、子测试、基准、模糊测试与覆盖率。遵循 TDD 方法及地道 Go 实践。
 ---
 
-# Go Testing Patterns
+# Go Testing Patterns / Go 测试模式
 
 Comprehensive Go testing patterns for writing reliable, maintainable tests following TDD methodology.
 

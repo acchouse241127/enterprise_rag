@@ -1,15 +1,16 @@
 ---
 name: project-guidelines-example
 description: "Example project-specific skill template based on a real production application."
+description_zh: 基于真实生产应用的项目特定技能模板示例。
 ---
 
-# Project Guidelines Skill (Example)
+# Project Guidelines Skill (Example) / 项目指南技能（示例）
 
 This is an example of a project-specific skill. Use this as a template for your own projects.
 
 Based on a real production application: [Zenith](https://zenith.chat) - AI-powered customer discovery platform.
 
-## When to Use
+## When to Use / 使用时机
 
 Reference this skill when working on the specific project it's designed for. Project skills contain:
 - Architecture overview
@@ -20,7 +21,7 @@ Reference this skill when working on the specific project it's designed for. Pro
 
 ---
 
-## Architecture Overview
+## Architecture Overview / 架构概览
 
 **Tech Stack:**
 - **Frontend**: Next.js 15 (App Router), TypeScript, React

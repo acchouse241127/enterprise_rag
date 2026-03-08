@@ -1,4 +1,4 @@
-# PM2 Init
+# PM2 Init / PM2 初始化
 
 Auto-analyze project and generate PM2 service commands.
 
@@ -6,7 +6,7 @@ Auto-analyze project and generate PM2 service commands.
 
 ---
 
-## Workflow
+## Workflow / 工作流
 
 1. Check PM2 (install via `npm install -g pm2` if missing)
 2. Scan project to identify services (frontend/backend/database)
@@ -14,7 +14,7 @@ Auto-analyze project and generate PM2 service commands.
 
 ---
 
-## Service Detection
+## Service Detection / 服务检测
 
 | Type | Detection | Default Port |
 |------|-----------|--------------|
@@ -30,7 +30,7 @@ Auto-analyze project and generate PM2 service commands.
 
 ---
 
-## Generated Files
+## Generated Files / 生成的文件
 
 ```
 project/
@@ -53,7 +53,7 @@ project/
 
 ---
 
-## Windows Configuration (IMPORTANT)
+## Windows Configuration (IMPORTANT) / Windows 配置（重要）
 
 ### ecosystem.config.cjs
 
@@ -104,7 +104,7 @@ proc.on('close', (code) => process.exit(code));
 
 ---
 
-## Command File Templates (Minimal Content)
+## Command File Templates (Minimal Content) / 命令文件模板（最小内容）
 
 ### pm2-all.md (Start all + monit)
 ````markdown
@@ -184,7 +184,7 @@ pm2 monit
 
 ---
 
-## Key Rules
+## Key Rules / 关键规则
 
 1. **Config file**: `ecosystem.config.cjs` (not .js)
 2. **Node.js**: Specify bin path directly + interpreter
@@ -195,7 +195,7 @@ pm2 monit
 
 ---
 
-## Execute
+## Execute / 执行
 
 Based on `$ARGUMENTS`, execute init:
 
@@ -209,7 +209,7 @@ Based on `$ARGUMENTS`, execute init:
 
 ---
 
-## Post-Init: Update CLAUDE.md
+## Post-Init: Update CLAUDE.md / 初始化后：更新 CLAUDE.md
 
 After generating files, append PM2 section to project's `CLAUDE.md` (create if not exists):
 
@@ -239,7 +239,7 @@ pm2 resurrect                    # Restore saved list
 
 ---
 
-## Post-Init: Display Summary
+## Post-Init: Display Summary / 初始化后：显示摘要
 
 After all files generated, output:
 

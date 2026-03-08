@@ -1,20 +1,21 @@
 ---
 name: python-patterns
 description: Pythonic idioms, PEP 8 standards, type hints, and best practices for building robust, efficient, and maintainable Python applications.
+description_zh: Pythonic 惯用法、PEP 8 标准、类型提示及构建健壮、高效、可维护 Python 应用的最佳实践。
 ---
 
-# Python Development Patterns
+# Python Development Patterns / Python 开发模式
 
 Idiomatic Python patterns and best practices for building robust, efficient, and maintainable applications.
 
-## When to Activate
+## When to Activate / 激活时机
 
 - Writing new Python code
 - Reviewing Python code
 - Refactoring existing Python code
 - Designing Python packages/modules
 
-## Core Principles
+## Core Principles / 核心原则
 
 ### 1. Readability Counts
 

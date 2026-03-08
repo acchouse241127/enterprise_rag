@@ -1,13 +1,14 @@
 ---
 name: postgres-patterns
 description: PostgreSQL database patterns for query optimization, schema design, indexing, and security. Based on Supabase best practices.
+description_zh: PostgreSQL 数据库模式：查询优化、模式设计、索引与安全。基于 Supabase 最佳实践。
 ---
 
-# PostgreSQL Patterns
+# PostgreSQL Patterns / PostgreSQL 模式
 
 Quick reference for PostgreSQL best practices. For detailed guidance, use the `database-reviewer` agent.
 
-## When to Activate
+## When to Activate / 激活时机
 
 - Writing SQL queries or migrations
 - Designing database schemas
@@ -15,7 +16,7 @@ Quick reference for PostgreSQL best practices. For detailed guidance, use the `d
 - Implementing Row Level Security
 - Setting up connection pooling
 
-## Quick Reference
+## Quick Reference / 快速参考
 
 ### Index Cheat Sheet
 

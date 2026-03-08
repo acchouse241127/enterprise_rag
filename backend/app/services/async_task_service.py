@@ -193,3 +193,104 @@ class AsyncTaskService:
             db, task_id, TaskStatus.CANCELLED, message="任务已取消"
         )
         return True
+
+    @staticmethod
+    def submit_document_parse_task(
+        document_id: int,
+        filename: str,
+        created_by: int | None = None,
+    ) -> AsyncTask:
+        """
+        创建并提交文档解析任务。
+
+        Args:
+            document_id: 文档ID
+            filename: 文件名（用于前端显示）
+            created_by: 创建者用户ID
+
+        Returns:
+            AsyncTask: 创建的任务记录
+        """
+        from app.core.database import SessionLocal
+
+        # 创建临时会话来创建任务
+        db = SessionLocal()
+        try:
+            task = AsyncTaskService.create_task(
+                db=db,
+                task_type=TaskType.DOCUMENT_PARSE,
+                entity_type="document",
+                entity_id=document_id,
+                input_data={"filename": filename, "document_id": document_id},
+                created_by=created_by,
+            )
+            task_id = task.id
+        finally:
+            db.close()
+
+        # 在后台线程中执行任务
+        def _parse_document_task(db: Session, task: AsyncTask):
+            """文档解析任务执行函数"""
+            from app.services.document_service import DocumentService
+
+            document_id = task.entity_id
+            if not document_id:
+                raise ValueError("任务缺少 document_id")
+
+            # 更新进度：开始解析
+            AsyncTaskService.update_task_status(
+                db, task.id, TaskStatus.RUNNING,
+                progress=10.0, message="正在解析文档..."
+            )
+
+            try:
+                # 执行文档解析
+                DocumentService.parse_and_index_sync(db, document_id)
+
+                # 获取文档状态
+                doc = DocumentService.get_by_id(db, document_id)
+                if doc and doc.status == "vectorized":
+                    AsyncTaskService.update_task_status(
+                        db, task.id, TaskStatus.SUCCESS,
+                        progress=100.0, message="文档解析完成",
+                        output_data={"document_id": document_id, "status": "vectorized"}
+                    )
+                elif doc and doc.status == "parsed":
+                    AsyncTaskService.update_task_status(
+                        db, task.id, TaskStatus.SUCCESS,
+                        progress=100.0, message="文档解析完成（向量化跳过）",
+                        output_data={"document_id": document_id, "status": "parsed"}
+                    )
+                elif doc and doc.status == "parse_failed":
+                    AsyncTaskService.update_task_status(
+                        db, task.id, TaskStatus.FAILED,
+                        progress=100.0,
+                        error_message=doc.parser_message or "文档解析失败"
+                    )
+                else:
+                    AsyncTaskService.update_task_status(
+                        db, task.id, TaskStatus.SUCCESS,
+                        progress=100.0, message="文档处理完成",
+                        output_data={"document_id": document_id, "status": doc.status if doc else "unknown"}
+                    )
+            except Exception as e:
+                logger.exception(f"文档解析任务失败: document_id={document_id}, error={e}")
+                AsyncTaskService.update_task_status(
+                    db, task.id, TaskStatus.FAILED,
+                    error_message=str(e)
+                )
+                raise
+
+        # 使用 SessionLocal 作为 db_factory
+        AsyncTaskService.run_task_in_background(
+            db_factory=SessionLocal,
+            task_id=task_id,
+            task_func=_parse_document_task
+        )
+
+        # 返回任务（需要重新查询）
+        db = SessionLocal()
+        try:
+            return AsyncTaskService.get_task(db, task_id)
+        finally:
+            db.close()

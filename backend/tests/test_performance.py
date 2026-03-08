@@ -7,7 +7,6 @@ Date: 2026-02-13
 
 import time
 
-import pytest
 from fastapi.testclient import TestClient
 
 

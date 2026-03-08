@@ -79,6 +79,13 @@ class KnowledgeBaseService:
             name=payload.name.strip(),
             description=payload.description,
             created_by=created_by or payload.created_by,
+            # V2.0 新增字段
+            chunk_size=payload.chunk_size,
+            chunk_overlap=payload.chunk_overlap,
+            chunk_mode=payload.chunk_mode,
+            parent_retrieval_mode=payload.parent_retrieval_mode,
+            dynamic_expand_n=payload.dynamic_expand_n,
+            default_retrieval_strategy=payload.default_retrieval_strategy,
         )
         db.add(kb)
         db.commit()
@@ -93,6 +100,20 @@ class KnowledgeBaseService:
             kb.name = payload.name.strip()
         if payload.description is not None:
             kb.description = payload.description
+        # V2.0 新增字段
+        if payload.chunk_size is not None:
+            kb.chunk_size = payload.chunk_size
+        if payload.chunk_overlap is not None:
+            kb.chunk_overlap = payload.chunk_overlap
+        if payload.chunk_mode is not None:
+            kb.chunk_mode = payload.chunk_mode
+        if payload.parent_retrieval_mode is not None:
+            kb.parent_retrieval_mode = payload.parent_retrieval_mode
+        if payload.dynamic_expand_n is not None:
+            kb.dynamic_expand_n = payload.dynamic_expand_n
+        # V2.0: 默认检索策略
+        if payload.default_retrieval_strategy is not None:
+            kb.default_retrieval_strategy = payload.default_retrieval_strategy
         db.add(kb)
         db.commit()
         db.refresh(kb)
@@ -105,11 +126,18 @@ class KnowledgeBaseService:
         doc_stmt = select(Document).where(Document.knowledge_base_id == kb_id)
         documents = list(db.execute(doc_stmt).scalars().all())
 
-        # 1) Chroma：按文档逐个清理，任一击败只打日志不中断
-        from app.services.document_service import DocumentService
+        # 1) Chroma：按文档逐个清理，任一失败只打日志不中断
+        # 直接使用 ChromaVectorStore 避免循环导入 DocumentService
+        from app.rag import ChromaVectorStore
+        from app.config import settings
+        vector_store = ChromaVectorStore(
+            host=settings.chroma_host,
+            port=settings.chroma_port,
+            collection_prefix=settings.chroma_collection_prefix,
+        )
         for doc in documents:
             try:
-                ok, err = DocumentService._vector_store.delete_document_chunks(
+                ok, err = vector_store.delete_document_chunks(
                     knowledge_base_id=kb_id,
                     document_id=doc.id,
                 )

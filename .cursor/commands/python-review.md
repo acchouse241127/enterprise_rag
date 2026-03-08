@@ -1,12 +1,13 @@
 ---
 description: Comprehensive Python code review for PEP 8 compliance, type hints, security, and Pythonic idioms. Invokes the python-reviewer agent.
+description_zh: 全面的 Python 代码审查，涵盖 PEP 8 合规、类型提示、安全与 Pythonic 惯用法。调用 python-reviewer 代理。
 ---
 
-# Python Code Review
+# Python Code Review / Python 代码审查
 
 This command invokes the **python-reviewer** agent for comprehensive Python-specific code review.
 
-## What This Command Does
+## What This Command Does / 本命令作用
 
 1. **Identify Python Changes**: Find modified `.py` files via `git diff`
 2. **Run Static Analysis**: Execute `ruff`, `mypy`, `pylint`, `black --check`
@@ -15,7 +16,7 @@ This command invokes the **python-reviewer** agent for comprehensive Python-spec
 5. **Pythonic Code Check**: Verify code follows PEP 8 and Python best practices
 6. **Generate Report**: Categorize issues by severity
 
-## When to Use
+## When to Use / 使用时机
 
 Use `/python-review` when:
 - After writing or modifying Python code
@@ -24,7 +25,7 @@ Use `/python-review` when:
 - Onboarding to a new Python codebase
 - Learning Pythonic patterns and idioms
 
-## Review Categories
+## Review Categories / 审查类别
 
 ### CRITICAL (Must Fix)
 - SQL/Command injection vulnerabilities
@@ -52,7 +53,7 @@ Use `/python-review` when:
 - Not using f-strings for formatting
 - Unnecessary list creation
 
-## Automated Checks Run
+## Automated Checks Run / 自动检查项
 
 ```bash
 # Type checking
@@ -74,7 +75,7 @@ safety check
 pytest --cov=app --cov-report=term-missing
 ```
 
-## Example Usage
+## Example Usage / 示例用法
 
 ```text
 User: /python-review
@@ -161,7 +162,7 @@ Recommendation: ❌ Block merge until CRITICAL issue is fixed
 Run: `black app/routes/user.py app/services/auth.py`
 ```
 
-## Approval Criteria
+## Approval Criteria / 通过标准
 
 | Status | Condition |
 |--------|-----------|
@@ -169,14 +170,14 @@ Run: `black app/routes/user.py app/services/auth.py`
 | ⚠️ Warning | Only MEDIUM issues (merge with caution) |
 | ❌ Block | CRITICAL or HIGH issues found |
 
-## Integration with Other Commands
+## Integration with Other Commands / 与其他命令的集成
 
 - Use `/tdd` first to ensure tests pass
 - Use `/code-review` for non-Python specific concerns
 - Use `/python-review` before committing
 - Use `/build-fix` if static analysis tools fail
 
-## Framework-Specific Reviews
+## Framework-Specific Reviews / 框架特定审查
 
 ### Django Projects
 The reviewer checks for:
@@ -200,12 +201,12 @@ The reviewer checks for:
 - Blueprint organization
 - Configuration management
 
-## Related
+## Related / 相关
 
 - Agent: `agents/python-reviewer.md`
 - Skills: `skills/python-patterns/`, `skills/python-testing/`
 
-## Common Fixes
+## Common Fixes / 常见修复
 
 ### Add Type Hints
 ```python
@@ -281,7 +282,7 @@ for item in items:
 result = "".join(str(item) for item in items)
 ```
 
-## Python Version Compatibility
+## Python Version Compatibility / Python 版本兼容性
 
 The reviewer notes when code uses features from newer Python versions:
 
